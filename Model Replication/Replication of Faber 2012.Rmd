@@ -36,18 +36,14 @@ Each asset's class price series has been saved as a CSV. The packages used for p
 rm(list = ls())
 
 require(quantstrat)
-symbols <- c("SP500","EAFE","US10YR","GSCI","NAREIT")
+symbols <- c("SP500","EAFE","US10YR","GSCI","NAREIT","TBills")
 
 getSymbols(symbols,
            src = "csv",
-           dir="FinalData",
+           dir="../Data/CSV files",
            col.names=c("Close"))
 
 ```
-
-To do:
-
-- hide output in html?
 
 #### Manipulating the data
 
@@ -61,7 +57,7 @@ AllAssets <- cbind.xts(Cl(SP500),
                        Cl(NAREIT))                       
 
 AllAssets <- AllAssets["1972-12-31::2016-12-31"]
-colnames(AllAssets) <- symbols
+colnames(AllAssets) <- symbols[1:5]
 
 AllAssets.ret <- Return.calculate(AllAssets)[-1,]
 AllAssets.cumret <- 100*cumprod(1+ ROC(AllAssets, type = "discrete")[-1,])
@@ -81,28 +77,37 @@ chart.TimeSeries(AllAssets.cumret["1972-12-31::2012-12-31"],
 
 To do:
 
-- get data and create returns for T-bills and cpi to add to chart
-- create own colourset
+* add t-bills
+* add CPI
+* create same colourset / scale
+
 
 ####Analysing returns and drawdowns.
 
 
 ```{r}
-table.AnnualizedReturns(AllAssets.ret["1972-12-31::2012-12-31"], 
-                        scale = 12, 
-                        Rf = ((1+0.0541)^(1/12))-1, #not same as 5.41%?
-                        geometric = TRUE, 
-                        digits = 4)
+#subset to required dates
+Returns <- AllAssets.ret["1972-12-31::2012-12-31"]
+stats <- rbind(Return.annualized(Returns,scale = 12)*100, 
+               StdDev.annualized(Returns,scale = 12)*100, 
+               SharpeRatio.annualized(Returns,Rf = 0.0541/12),
+               maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
+               c(4.30))
 
-round(maxDrawdown(AllAssets.ret["1972-12-31::2012-12-31"], weights = NULL, geometric = TRUE, invert = FALSE),4)
+colnames(stats) <- symbols[1:5]
+rownames(stats) <- c("Return","Volatility","Sharpe (5.41%)","MaxDD","Inflation CAGR")
+
+round(stats,2)
 
 ```
 
 To do:
-- confirm correct rate for Rf (Faber uses 5.41%)
-- create one table similar to figure 4 page 17
-- format into percentages
-- also create table showing differences?
+
+* confirm correct rate for Rf (Faber uses 5.41%) and that sharpe ratio is calculating correctly
+* format into percentages
+* is table needed showing differences to original research?
+* source actual inflation
+
 
 ####Drawdown chart
 
@@ -119,8 +124,10 @@ chart.Drawdown(AllAssets.ret$`SP500`["1972-12-31::2012-12-31"],
 ```
 
 To do:
-- get data for the S&P500 TR from 1900
-- Do for all assets in loop?
+
+* get data for the S&P500 TR from 1900
+* Do for all assets in loop?
+* fill in colour
 
 ####Managing Risk 
 
@@ -141,14 +148,45 @@ chart_Series(Cl(SP500),
              )
 ```
 
+To - do 
 
-#### S&P 500 from 1901 - 2012
+* look at adding visualisation when its in / out of the market http://timelyportfolio.blogspot.co.za/2011/08/drawdown-visualization.html
 
-create trading strategy,
+#### System Rules
+
+* Buy when monthly price > 10m SMA
+* Sell and move to cash when monthly price < 10m SMA
+
+Notes:
+
+* All entry and exit prices are on day of the signal at the close
+** means intray price fluctuations are ignored
+** also should look at trading the next day/week or month?
+* no taxes commissions or slippages
+
+####S&P 500 from 1901 - 2012
+
+To demostrate the logic and characteristics of the timing system, Faber tests the S&P back to 1901
+
+```{r}
+AllAssets <- cbind.xts(Cl(SP500),
+                       Cl(TBILLS))#,Cl(US10YR), Cl(GSCI),Cl(NAREIT))    
+
+#create dataframe - tidyverse not compatible with xts?
+AllAssets.df <- data.frame(date=index(AllAssets), coredata(AllAssets)) #, row.names = index(AllAssets))
+
+#mutate new columns
+AllAssets.df  <- mutate(AllAssets.df, 
+  "10mSMA" = rollmean(SP500.Close,10,fill = 0,align = "right"),
+  "Asset.ret" = c(0,diff(SP500.Close)/lag(SP500.Close)[-1]),
+  "Rf.ret" = lag((TBILLS.Close/100)/12),
+  "signal" = lag(ifelse(SP500.Close>`10mSMA`,1,0)),
+  "Timing.ret" = ifelse(signal == 1,Asset.ret,Rf.ret) 
+)
+
+rownames(AllAssets.df) <- index(AllAssets)
+```
 
 
 
-
-After replicating... Lets analysed what has happened since 2012 adding another 4 years of data.
- 
 
