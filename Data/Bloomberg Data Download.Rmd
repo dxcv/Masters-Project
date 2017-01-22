@@ -75,7 +75,6 @@ NAREIT <- to.monthly(NAREIT,indexAt='lastof',drop.time=TRUE)[,4] #convert to mon
 rm(BloombergData)
 ```
 
-
 ```{r}
 #save as CSV files for use in other files - change to loop at some point
 write.zoo(SP500, file="CSV Files/SP500.csv", sep=",")

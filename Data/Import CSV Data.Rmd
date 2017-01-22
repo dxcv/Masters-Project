@@ -1,0 +1,26 @@
+---
+title: "Import CSV Files"
+output: html_notebook
+---
+
+This file is an example of code used to import data saved in the CSV Files - can be copied into other files
+
+```{r}
+#Import saved US10YR csv file into new xts object - copy this into any other R files that need the research
+rm(list = ls()) 
+
+symbols <- c("SP500","EAFE","US10YR","GSCI","NAREIT")
+
+getSymbols(symbols,
+           src = "csv",
+           dir="CSV files",
+           #from=startDate,
+           #to=endDate,
+           col.names=c("Close")
+           #auto.assign=TRUE,
+           #index.class=c("POSIXt","POSIXct"),
+           #adjust = TRUE
+           )
+
+rm(symbols)
+```
