@@ -35,8 +35,10 @@ Each asset's class price series has been saved as a CSV. The packages used for p
 #Import saved pricing data csv files as xts
 rm(list = ls())
 
-require(quantstrat)
-symbols <- c("SP500","EAFE","US10YR","GSCI","NAREIT","TBills")
+library(tidyverse)
+library(tidyquant)
+library(quantstrat)
+symbols <- c("TBILLS","SP500","EAFE","US10YR","GSCI","NAREIT")
 
 getSymbols(symbols,
            src = "csv",
@@ -50,14 +52,15 @@ getSymbols(symbols,
 Once the data is loaded i can create one xts object for the prices and calculate each asset class's returns. The asset class returns are then charted to replicate figure 3 on page 16.
 
 ```{r}
-AllAssets <- cbind.xts(Cl(SP500),
+AllAssets <- cbind.xts(Cl(TBILLS),
+                       Cl(SP500),
                        Cl(EAFE),
                        Cl(US10YR),
                        Cl(GSCI),
                        Cl(NAREIT))                       
 
 AllAssets <- AllAssets["1972-12-31::2016-12-31"]
-colnames(AllAssets) <- symbols[1:5]
+colnames(AllAssets) <- symbols
 
 AllAssets.ret <- Return.calculate(AllAssets)[-1,]
 AllAssets.cumret <- 100*cumprod(1+ ROC(AllAssets, type = "discrete")[-1,])
@@ -77,7 +80,6 @@ chart.TimeSeries(AllAssets.cumret["1972-12-31::2012-12-31"],
 
 To do:
 
-* add t-bills
 * add CPI
 * create same colourset / scale
 
@@ -94,7 +96,7 @@ stats <- rbind(Return.annualized(Returns,scale = 12)*100,
                maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
                c(4.30))
 
-colnames(stats) <- symbols[1:5]
+colnames(stats) <- symbols
 rownames(stats) <- c("Return","Volatility","Sharpe (5.41%)","MaxDD","Inflation CAGR")
 
 round(stats,2)
@@ -103,7 +105,7 @@ round(stats,2)
 
 To do:
 
-* confirm correct rate for Rf (Faber uses 5.41%) and that sharpe ratio is calculating correctly
+* confirm correct rate for Rf (Faber uses 5.41%) and that sharpe ratio is calculating correctly. TBILL should be zero!
 * format into percentages
 * is table needed showing differences to original research?
 * source actual inflation
@@ -169,8 +171,14 @@ Notes:
 To demostrate the logic and characteristics of the timing system, Faber tests the S&P back to 1901
 
 ```{r}
+
+getSymbols("TBillYields",
+           src = "csv",
+           dir="../Data/CSV files",
+           col.names=c("Close"))
+
 AllAssets <- cbind.xts(Cl(SP500),
-                       Cl(TBILLS))#,Cl(US10YR), Cl(GSCI),Cl(NAREIT))    
+                       Cl(TBILLYIELDS))#,Cl(US10YR), Cl(GSCI),Cl(NAREIT))    
 
 #create dataframe - tidyverse not compatible with xts?
 AllAssets.df <- data.frame(date=index(AllAssets), coredata(AllAssets)) #, row.names = index(AllAssets))
@@ -179,7 +187,7 @@ AllAssets.df <- data.frame(date=index(AllAssets), coredata(AllAssets)) #, row.na
 AllAssets.df  <- mutate(AllAssets.df, 
   "10mSMA" = rollmean(SP500.Close,10,fill = 0,align = "right"),
   "Asset.ret" = c(0,diff(SP500.Close)/lag(SP500.Close)[-1]),
-  "Rf.ret" = lag((TBILLS.Close/100)/12),
+  "Rf.ret" = lag((TBILLYIELDS.Close/100)/12),
   "signal" = lag(ifelse(SP500.Close>`10mSMA`,1,0)),
   "Timing.ret" = ifelse(signal == 1,Asset.ret,Rf.ret) 
 )
@@ -187,6 +195,60 @@ AllAssets.df  <- mutate(AllAssets.df,
 rownames(AllAssets.df) <- index(AllAssets)
 ```
 
+To do:
+
+* check lag correct
+* run over data from 1900 / other assets
+* chart with periods highlighted (similar to position chart)
+
+####Stats
+
+```{r}
+AllAssets <- as.xts(AllAssets.df[,-1])
+Returns <- cbind.xts(AllAssets$Asset.ret, AllAssets$Timing.ret)["1972-12-31::2012-12-31"]
+
+stats <- rbind(Return.annualized(Returns,scale = 12)*100, 
+               StdDev.annualized(Returns,scale = 12)*100, 
+               SharpeRatio.annualized(Returns,Rf = 0.0541/12),
+               maxDrawdown(Returns,scale = 12)*100,
+               c(nrow(subset(Returns, Returns$Asset.ret >= 0))/nrow(Returns),nrow(subset(Returns, Returns$Timing.ret >= 0))/nrow(Returns))*100)
+
+colnames(stats) <- c("S&P 500","TIMING")
+rownames(stats) <- c("Return","Volatility","Sharpe","MaxDD","% Positive Months")
+
+round(stats,2)
+```
+
+To do:
+
+* do with data from 1900
+* feed in correct Rf for period
+* format percentages
+* add $100 becomes and inflation CAGR
+* loop for other asset classes
+
+####Charts 
+
+```{r}
+charts.PerformanceSummary(Returns,
+                          main = "S&P 500 Total Returns vs Timing Total Returns (1973-2012)",
+                          date.format = "%Y",
+                          colorset = c(4,2),
+                          ylog = FALSE,
+                          minor.ticks =FALSE)
+```
 
 
+```{r}
+charts.RollingPerformance(Returns,
+                          main = "S&P 500 Total Returns vs Timing Total Returns (1973-2012)",
+                          date.format = "%Y",
+                          colorset = c(4,2),
+                          ylog = FALSE,
+                          minor.ticks =FALSE)
+```
+
+To do: 
+
+* calculate returns for year before so rolling returns correct from day 1
 
