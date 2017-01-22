@@ -1,0 +1,16 @@
+---
+title: "Bloomberg Data Download"
+output: html_notebook
+---
+
+This file downloads pricing data for the SP500, EAFE, GSCI and NAREIT from Bloomberg.
+
+Download data is converted to monthly data between 31/12/1971 until 31/12/2016 to be able to replicate Faber's original research. At a later stage this can be modified to daily or weekly data if required.
+
+All indices are total return indices provided by Bloomberg.
+
+
+```{r}
+
+```
+
