@@ -48,17 +48,17 @@ for (i in 2:NROW(TRCalcs)-1){
 }
 
 TBillIndex <- TRCalcs[,3]
-colnames(TBillIndex) <- c("TBills.Close")
+colnames(TBillIndex) <- c("TBILLS.Close")
 ```
 
 To do:
 
-* check this is right way to calculate TR index
+* check this is right way to calculate TR index for Rf
 * Can this be done better with a mutate?
 
 ```{r}
 #save as CSV files
-write.zoo(TBillIndex, file="CSV files/TBills.csv", sep=",")
+write.zoo(TBillIndex, file="CSV files/TBILLS.csv", sep=",")
 ```
 
 

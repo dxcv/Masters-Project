@@ -219,44 +219,42 @@ rm(start.date,end.date)</code></pre>
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI3NhdmUgYXMgQ1NWIGZpbGVzXG53cml0ZS56b28oVGJpbGwueWllbGQsIGZpbGU9XCJDU1YgZmlsZXMvVEJpbGxzLmNzdlwiLCBzZXA9XCIsXCIpXG5gYGAifQ== -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI3NhdmUgYXMgQ1NWIGZpbGVzXG53cml0ZS56b28oVGJpbGwueWllbGQsIGZpbGU9XCJDU1YgZmlsZXMvVEJpbGxZaWVsZHMuY3N2XCIsIHNlcD1cIixcIilcbmBgYCJ9 -->
 <pre class="r"><code>#save as CSV files
-write.zoo(Tbill.yield, file=&quot;CSV files/TBills.csv&quot;, sep=&quot;,&quot;)</code></pre>
+write.zoo(Tbill.yield, file=&quot;CSV files/TBillYields.csv&quot;, sep=&quot;,&quot;)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZm9yIChpIGluIDE6TlJPVyhUUkNhbGNzKSl7XG4gIFRSQ2FsY3MkSW5kZXhbaSsxLDFdIDwtIDErVFJDYWxjcyRZaWVsZFtpKzFdXG59XG5cbmBgYCJ9 -->
-<pre class="r"><code>for (i in 1:NROW(TRCalcs)){
-  TRCalcs$Index[i+1,1] &lt;- 1+TRCalcs$Yield[i+1]
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuVFJDYWxjcyA8LSBUYmlsbC55aWVsZFxuVFJDYWxjcyRZaWVsZCA8LSBUYmlsbC55aWVsZC8xMi8xMDBcblRSQ2FsY3MkSW5kZXggPC0gMTAwXG5mb3IgKGkgaW4gMjpOUk9XKFRSQ2FsY3MpLTEpe1xuICBUUkNhbGNzJEluZGV4W2krMSwxXSA8LSAoMStUUkNhbGNzJFlpZWxkW2ldKSpUUkNhbGNzJEluZGV4W2ldXG59XG5UQmlsbEluZGV4IDwtIFRSQ2FsY3NbLDNdXG5jb2xuYW1lcyhUQmlsbEluZGV4KSA8LSBjKFwiVEJJTExTLkNsb3NlXCIpXG5gYGAifQ== -->
+<pre class="r"><code>TRCalcs &lt;- Tbill.yield
+TRCalcs$Yield &lt;- Tbill.yield/12/100
+TRCalcs$Index &lt;- 100
+for (i in 2:NROW(TRCalcs)-1){
+  TRCalcs$Index[i+1,1] &lt;- (1+TRCalcs$Yield[i])*TRCalcs$Index[i]
 }
-</code></pre>
+TBillIndex &lt;- TRCalcs[,3]
+colnames(TBillIndex) &lt;- c(&quot;TBILLS.Close&quot;)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiRXJyb3IgaW4gYFsueHRzYChUUkNhbGNzJFlpZWxkLCBpICsgMSkgOiBzdWJzY3JpcHQgb3V0IG9mIGJvdW5kc1xuIn0= -->
-<pre><code>Error in `[.xts`(TRCalcs$Yield, i + 1) : subscript out of bounds</code></pre>
-<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>To do:</p>
 <ul>
-<li>check this is right way to calculate TR index</li>
+<li>check this is right way to calculate TR index for Rf</li>
 <li>Can this be done better with a mutate?</li>
 </ul>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxud3JpdGUuem9vKFRCaWxsSW5kZXgsIGZpbGU9XCJDU1YgZmlsZXMvVEJpbGxzLmNzdlwiLCBzZXA9XCIsXCIpXG5cbmBgYCJ9 -->
-<pre class="r"><code>write.zoo(TBillIndex, file=&quot;CSV files/TBills.csv&quot;, sep=&quot;,&quot;)
-</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI3NhdmUgYXMgQ1NWIGZpbGVzXG53cml0ZS56b28oVEJpbGxJbmRleCwgZmlsZT1cIkNTViBmaWxlcy9UQklMTFMuY3N2XCIsIHNlcD1cIixcIilcbmBgYCJ9 -->
+<pre class="r"><code>#save as CSV files
+write.zoo(TBillIndex, file=&quot;CSV files/TBILLS.csv&quot;, sep=&quot;,&quot;)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiRXJyb3I6IGFsbChuYW1lcyhkeCkgIT0gaW5kZXgubmFtZSkgaXMgbm90IFRSVUVcbiJ9 -->
-<pre><code>Error: all(names(dx) != index.name) is not TRUE</code></pre>
-<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIkZSRUQgVC1CaWxscyBEb3dubG9hZCINCm91dHB1dDogaHRtbF9ub3RlYm9vaw0KLS0tDQoNClRoaXMgZmlsZSBkb3dubG9hZHMgdGhlIFQtQmlsbHMgcmF0ZQ0KDQpgYGB7cn0NCiNjbGVhbiB3b3Jrc3BhY2UgDQpybShsaXN0PWxzKClbISBscygpICVpbiUgYygib2JqZWN0MSIsIm9iamVjdDIiKV0pICNyZW1vdmUgYWxsIGJ1dCB0aGUgb2JqZWN0cyB5b3UgZGVmaW5lIGUuZy4gb2JqZWN0MSBhbmQgb2JqZWN0Mg0KYGBgDQoNCmBgYHtyLCBtZXNzYWdlPUZBTFNFfQ0KI2xvYWQgcmVxdWlyZWQgcGFja2FnZXMNCmxpYnJhcnkoUlF1YW50TGliKQ0KbGlicmFyeShxdWFudHN0cmF0KSANCmxpYnJhcnkocXVhbnRtb2QpDQpsaWJyYXJ5KFBlcmZvcm1hbmNlQW5hbHl0aWNzKQ0KbGlicmFyeSh0aWR5cXVhbnQpDQpsaWJyYXJ5KHRpZHl2ZXJzZSkNCmBgYA0KDQpgYGB7cn0NCiNEb3dubG9hZCBGUkVEIGRhdGEgZm9yIDEwWXIgVVMgQm9uZHMNCnN0YXJ0LmRhdGUgPC0gYXMuRGF0ZSgiMTk3Mi0xLTMxIikNCmVuZC5kYXRlIDwtIGFzLkRhdGUoIjIwMTYtMTItMzEiKQ0KDQpnZXRTeW1ib2xzKCJEVEIzIiwgc3JjPSJGUkVEIikgI2Rvd25sb2FkIGRhdGENCg0KVGJpbGwueWllbGQgPC0gdG8ubW9udGhseShEVEIzLGluZGV4QXQ9J2xhc3RvZicsZHJvcC50aW1lPVRSVUUpWyw0XSAjY29udmVydCB0byBtb250aGx5DQpUYmlsbC55aWVsZCA8LSBUYmlsbC55aWVsZFtwYXN0ZShzdGFydC5kYXRlLGVuZC5kYXRlLHNlcD0iLyIpXSAjc3Vic2V0IHRvIHJlcXVpcmVkIHBlcmlvZA0KDQpybShzdGFydC5kYXRlLGVuZC5kYXRlKQ0KYGBgDQoNCmBgYHtyfQ0KI3NhdmUgYXMgQ1NWIGZpbGVzDQp3cml0ZS56b28oVGJpbGwueWllbGQsIGZpbGU9IkNTViBmaWxlcy9UQmlsbFlpZWxkcy5jc3YiLCBzZXA9IiwiKQ0KYGBgDQoNCmBgYHtyfQ0KVFJDYWxjcyA8LSBUYmlsbC55aWVsZA0KVFJDYWxjcyRZaWVsZCA8LSBUYmlsbC55aWVsZC8xMi8xMDANClRSQ2FsY3MkSW5kZXggPC0gMTAwDQoNCmZvciAoaSBpbiAyOk5ST1coVFJDYWxjcyktMSl7DQogIFRSQ2FsY3MkSW5kZXhbaSsxLDFdIDwtICgxK1RSQ2FsY3MkWWllbGRbaV0pKlRSQ2FsY3MkSW5kZXhbaV0NCn0NCg0KVEJpbGxJbmRleCA8LSBUUkNhbGNzWywzXQ0KY29sbmFtZXMoVEJpbGxJbmRleCkgPC0gYygiVEJpbGxzLkNsb3NlIikNCmBgYA0KDQpUbyBkbzoNCg0KKiBjaGVjayB0aGlzIGlzIHJpZ2h0IHdheSB0byBjYWxjdWxhdGUgVFIgaW5kZXgNCiogQ2FuIHRoaXMgYmUgZG9uZSBiZXR0ZXIgd2l0aCBhIG11dGF0ZT8NCg0KYGBge3J9DQojc2F2ZSBhcyBDU1YgZmlsZXMNCndyaXRlLnpvbyhUQmlsbEluZGV4LCBmaWxlPSJDU1YgZmlsZXMvVEJpbGxzLmNzdiIsIHNlcD0iLCIpDQpgYGANCg0KDQoNCg==</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIkZSRUQgVC1CaWxscyBEb3dubG9hZCINCm91dHB1dDogaHRtbF9ub3RlYm9vaw0KLS0tDQoNClRoaXMgZmlsZSBkb3dubG9hZHMgdGhlIFQtQmlsbHMgcmF0ZQ0KDQpgYGB7cn0NCiNjbGVhbiB3b3Jrc3BhY2UgDQpybShsaXN0PWxzKClbISBscygpICVpbiUgYygib2JqZWN0MSIsIm9iamVjdDIiKV0pICNyZW1vdmUgYWxsIGJ1dCB0aGUgb2JqZWN0cyB5b3UgZGVmaW5lIGUuZy4gb2JqZWN0MSBhbmQgb2JqZWN0Mg0KYGBgDQoNCmBgYHtyLCBtZXNzYWdlPUZBTFNFfQ0KI2xvYWQgcmVxdWlyZWQgcGFja2FnZXMNCmxpYnJhcnkoUlF1YW50TGliKQ0KbGlicmFyeShxdWFudHN0cmF0KSANCmxpYnJhcnkocXVhbnRtb2QpDQpsaWJyYXJ5KFBlcmZvcm1hbmNlQW5hbHl0aWNzKQ0KbGlicmFyeSh0aWR5cXVhbnQpDQpsaWJyYXJ5KHRpZHl2ZXJzZSkNCmBgYA0KDQpgYGB7cn0NCiNEb3dubG9hZCBGUkVEIGRhdGEgZm9yIDEwWXIgVVMgQm9uZHMNCnN0YXJ0LmRhdGUgPC0gYXMuRGF0ZSgiMTk3Mi0xLTMxIikNCmVuZC5kYXRlIDwtIGFzLkRhdGUoIjIwMTYtMTItMzEiKQ0KDQpnZXRTeW1ib2xzKCJEVEIzIiwgc3JjPSJGUkVEIikgI2Rvd25sb2FkIGRhdGENCg0KVGJpbGwueWllbGQgPC0gdG8ubW9udGhseShEVEIzLGluZGV4QXQ9J2xhc3RvZicsZHJvcC50aW1lPVRSVUUpWyw0XSAjY29udmVydCB0byBtb250aGx5DQpUYmlsbC55aWVsZCA8LSBUYmlsbC55aWVsZFtwYXN0ZShzdGFydC5kYXRlLGVuZC5kYXRlLHNlcD0iLyIpXSAjc3Vic2V0IHRvIHJlcXVpcmVkIHBlcmlvZA0KDQpybShzdGFydC5kYXRlLGVuZC5kYXRlKQ0KYGBgDQoNCmBgYHtyfQ0KI3NhdmUgYXMgQ1NWIGZpbGVzDQp3cml0ZS56b28oVGJpbGwueWllbGQsIGZpbGU9IkNTViBmaWxlcy9UQmlsbFlpZWxkcy5jc3YiLCBzZXA9IiwiKQ0KYGBgDQoNCmBgYHtyfQ0KVFJDYWxjcyA8LSBUYmlsbC55aWVsZA0KVFJDYWxjcyRZaWVsZCA8LSBUYmlsbC55aWVsZC8xMi8xMDANClRSQ2FsY3MkSW5kZXggPC0gMTAwDQoNCmZvciAoaSBpbiAyOk5ST1coVFJDYWxjcyktMSl7DQogIFRSQ2FsY3MkSW5kZXhbaSsxLDFdIDwtICgxK1RSQ2FsY3MkWWllbGRbaV0pKlRSQ2FsY3MkSW5kZXhbaV0NCn0NCg0KVEJpbGxJbmRleCA8LSBUUkNhbGNzWywzXQ0KY29sbmFtZXMoVEJpbGxJbmRleCkgPC0gYygiVEJJTExTLkNsb3NlIikNCmBgYA0KDQpUbyBkbzoNCg0KKiBjaGVjayB0aGlzIGlzIHJpZ2h0IHdheSB0byBjYWxjdWxhdGUgVFIgaW5kZXggZm9yIFJmDQoqIENhbiB0aGlzIGJlIGRvbmUgYmV0dGVyIHdpdGggYSBtdXRhdGU/DQoNCmBgYHtyfQ0KI3NhdmUgYXMgQ1NWIGZpbGVzDQp3cml0ZS56b28oVEJpbGxJbmRleCwgZmlsZT0iQ1NWIGZpbGVzL1RCSUxMUy5jc3YiLCBzZXA9IiwiKQ0KYGBgDQoNCg0KDQo=</div>
 
 
 
