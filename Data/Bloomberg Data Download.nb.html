@@ -177,11 +177,91 @@ $(document).ready(function () {
 <p>All indices are total return indices provided by Bloomberg.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2NsZWFuIHdvcmtzcGFjZSBcbiNybShsaXN0PWxzKClbISBscygpICVpbiUgYyhcIm9iamVjdDFcIixcIm9iamVjdDJcIildKSAjcmVtb3ZlIGFsbCBidXQgdGhlIG9iamVjdHMgeW91IGRlZmluZSBlLmcuIG9iamVjdDEgYW5kIG9iamVjdDJcbmBgYCJ9 -->
+<pre class="r"><code>#clean workspace 
+#rm(list=ls()[! ls() %in% c(&quot;object1&quot;,&quot;object2&quot;)]) #remove all but the objects you define e.g. object1 and object2</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2xvYWQgcmVxdWlyZWQgcGFja2FnZXNcbmxpYnJhcnkoUmJscGFwaSlcbmxpYnJhcnkocXVhbnRzdHJhdCkgXG5saWJyYXJ5KHF1YW50bW9kKVxubGlicmFyeShQZXJmb3JtYW5jZUFuYWx5dGljcylcbmxpYnJhcnkodGlkeXF1YW50KVxuYGBgIn0= -->
+<pre class="r"><code>#load required packages
+library(Rblpapi)
+library(quantstrat) 
+library(quantmod)
+library(PerformanceAnalytics)
+library(tidyquant)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2Nvbm5lY3QgdG8gYmxvb21iZXJnXG5ibHBDb25uZWN0KClcbmBgYCJ9 -->
+<pre class="r"><code>#connect to bloomberg
+blpConnect()</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0Rvd25sb2FkIGJsb29tYmVyZyBkYXRhIGZvciBpbmRpY2VzIEZhYmVyIHVzZWRcbnN5bWJvbHMgPC0gYyhcIlNQVFIyIEluZGV4XCIsIFwiR0REVUVBRkUgSU5ERVhcIiwgXCJTUEdTQ0lUUiBJTkRFWFwiLFwiRk5DT1RSIEluZGV4XCIpXG4jU2V0IHRpbWUgcGVyaW9kXG5zdGFydC5kYXRlIDwtIGFzLkRhdGUoXCIxOTcxLTEyLTMxXCIpXG5lbmQuZGF0ZSA8LSBhcy5EYXRlKFwiMjAxNi0xMi0zMVwiKVxuYGBgIn0= -->
+<pre class="r"><code>#Download bloomberg data for indices Faber used
+symbols &lt;- c(&quot;SPTR2 Index&quot;, &quot;GDDUEAFE INDEX&quot;, &quot;SPGSCITR INDEX&quot;,&quot;FNCOTR Index&quot;)
+#Set time period
+start.date &lt;- as.Date(&quot;1971-12-31&quot;)
+end.date &lt;- as.Date(&quot;2016-12-31&quot;)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0Rvd25sb2FkIGRhdGEgZnJvbSBCbG9vbWJlcmdcbiNvcHQgPC0gYyhcInBlcmlvZGljaXR5U2VsZWN0aW9uXCI9XCJNT05USExZXCIpIC0gaXMgdGhlcmUgYW4gb3B0aW9uIGZvciBsYXN0IGRheSBvZiB0aGUgbW9udGg/IGluY2x1ZGUgbm9uIHRyYWRpbmcgZGF5cz9cbkJsb29tYmVyZ0RhdGEgPC0gYmRoKHNlY3VyaXRpZXMgPSBzeW1ib2xzLCBcbiAgICAgICAgICAgIGMoXCJQWF9MQVNUXCIpLCBcbiAgICAgICAgICAgIHN0YXJ0LmRhdGU9IHN0YXJ0LmRhdGUsXG4gICAgICAgICAgICBlbmQuZGF0ZSA9IGVuZC5kYXRlLFxuICAgICAgICAgICAgI29wdGlvbnM9b3B0XG4gICAgICAgICAgICApXG5ybShzeW1ib2xzLHN0YXJ0LmRhdGUsZW5kLmRhdGUpXG5gYGAifQ== -->
+<pre class="r"><code>#Download data from Bloomberg
+#opt &lt;- c(&quot;periodicitySelection&quot;=&quot;MONTHLY&quot;) - is there an option for last day of the month? include non trading days?
+BloombergData &lt;- bdh(securities = symbols, 
+            c(&quot;PX_LAST&quot;), 
+            start.date= start.date,
+            end.date = end.date,
+            #options=opt
+            )
+rm(symbols,start.date,end.date)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2NvbnZlcnQgQmxvb21iZXJnIGRhdGEgaW50byBpbmRpdmlkdWFsIHh0cyBmaWxlcyBcbiN0byBkbyBsYXRlciBzZWUgaWYgaSBjYW4gZG8gaW4gUmJscGFwaSBkb3dubG9hZCBhcyB4dHM/IG9yIGNyZWF0ZSBhIGZ1bmN0aW9uL2xvb3A/KVxuI25vdGUgdXNpbmcgb3B0IDwtIGMoXCJwZXJpb2RpY2l0eVNlbGVjdGlvblwiPVwiTU9OVEhMWVwiKSBpbiB0aGUgQkRIIHJlc3VsdHMgaW4gZGlmZmVyZW50IGxhc3QgZGF5cyBvZiB0aGUgbW9udGggdG8gZnJlZFxuU1A1MDAgPC0geHRzKEJsb29tYmVyZ0RhdGEkYFNQVFIyIEluZGV4YFssLTFdLEJsb29tYmVyZ0RhdGEkYFNQVFIyIEluZGV4YFssMV0pXG4jY29sbmFtZXMoU1A1MDApIDwtIGMoXCJTUDUwMC5DbG9zZVwiKSAtIG5lZWQgdGhpcyBpZiBkb24ndCB1c2UgdG8ubW9udGhseT9cblNQNTAwIDwtIHRvLm1vbnRobHkoU1A1MDAsaW5kZXhBdD0nbGFzdG9mJyxkcm9wLnRpbWU9VFJVRSlbLDRdICNjb252ZXJ0IHRvIG1vbnRobHlcbkVBRkUgPC0geHRzKEJsb29tYmVyZ0RhdGEkYEdERFVFQUZFIElOREVYYFssLTFdLEJsb29tYmVyZ0RhdGEkYEdERFVFQUZFIElOREVYYFssMV0pXG5FQUZFIDwtIHRvLm1vbnRobHkoRUFGRSxpbmRleEF0PSdsYXN0b2YnLGRyb3AudGltZT1UUlVFKVssNF0gI2NvbnZlcnQgdG8gbW9udGhseVxuR1NDSSA8LSB4dHMoQmxvb21iZXJnRGF0YSRgU1BHU0NJVFIgSU5ERVhgWywtMV0sQmxvb21iZXJnRGF0YSRgU1BHU0NJVFIgSU5ERVhgWywxXSlcbkdTQ0kgPC0gdG8ubW9udGhseShHU0NJLGluZGV4QXQ9J2xhc3RvZicsZHJvcC50aW1lPVRSVUUpWyw0XSAjY29udmVydCB0byBtb250aGx5XG5OQVJFSVQgPC0geHRzKEJsb29tYmVyZ0RhdGEkYEZOQ09UUiBJbmRleGBbLC0xXSxCbG9vbWJlcmdEYXRhJGBGTkNPVFIgSW5kZXhgWywxXSlcbk5BUkVJVCA8LSB0by5tb250aGx5KE5BUkVJVCxpbmRleEF0PSdsYXN0b2YnLGRyb3AudGltZT1UUlVFKVssNF0gI2NvbnZlcnQgdG8gbW9udGhseVxucm0oQmxvb21iZXJnRGF0YSlcbmBgYCJ9 -->
+<pre class="r"><code>#convert Bloomberg data into individual xts files 
+#to do later see if i can do in Rblpapi download as xts? or create a function/loop?)
+#note using opt &lt;- c(&quot;periodicitySelection&quot;=&quot;MONTHLY&quot;) in the BDH results in different last days of the month to fred
+SP500 &lt;- xts(BloombergData$`SPTR2 Index`[,-1],BloombergData$`SPTR2 Index`[,1])
+#colnames(SP500) &lt;- c(&quot;SP500.Close&quot;) - need this if don't use to.monthly?
+SP500 &lt;- to.monthly(SP500,indexAt='lastof',drop.time=TRUE)[,4] #convert to monthly
+EAFE &lt;- xts(BloombergData$`GDDUEAFE INDEX`[,-1],BloombergData$`GDDUEAFE INDEX`[,1])
+EAFE &lt;- to.monthly(EAFE,indexAt='lastof',drop.time=TRUE)[,4] #convert to monthly
+GSCI &lt;- xts(BloombergData$`SPGSCITR INDEX`[,-1],BloombergData$`SPGSCITR INDEX`[,1])
+GSCI &lt;- to.monthly(GSCI,indexAt='lastof',drop.time=TRUE)[,4] #convert to monthly
+NAREIT &lt;- xts(BloombergData$`FNCOTR Index`[,-1],BloombergData$`FNCOTR Index`[,1])
+NAREIT &lt;- to.monthly(NAREIT,indexAt='lastof',drop.time=TRUE)[,4] #convert to monthly
+rm(BloombergData)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI3NhdmUgYXMgQ1NWIGZpbGVzIGZvciB1c2UgaW4gb3RoZXIgZmlsZXNcbndyaXRlLnpvbyhTUDUwMCwgZmlsZT1cIkNTViBGaWxlcy9TUDUwMC5jc3ZcIiwgc2VwPVwiLFwiKVxud3JpdGUuem9vKE5BUkVJVCwgZmlsZT1cIkNTViBGaWxlcy9OQVJFSVQuY3N2XCIsIHNlcD1cIixcIilcbndyaXRlLnpvbyhFQUZFLCBmaWxlPVwiQ1NWIEZpbGVzL0VBRkUuY3N2XCIsIHNlcD1cIixcIilcbndyaXRlLnpvbyhHU0NJLCBmaWxlPVwiQ1NWIEZpbGVzL0dTQ0kuY3N2XCIsIHNlcD1cIixcIilcbmBgYCJ9 -->
+<pre class="r"><code>#save as CSV files for use in other files
+write.zoo(SP500, file=&quot;CSV Files/SP500.csv&quot;, sep=&quot;,&quot;)
+write.zoo(NAREIT, file=&quot;CSV Files/NAREIT.csv&quot;, sep=&quot;,&quot;)
+write.zoo(EAFE, file=&quot;CSV Files/EAFE.csv&quot;, sep=&quot;,&quot;)
+write.zoo(GSCI, file=&quot;CSV Files/GSCI.csv&quot;, sep=&quot;,&quot;)</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIkJsb29tYmVyZyBEYXRhIERvd25sb2FkIg0Kb3V0cHV0OiBodG1sX25vdGVib29rDQotLS0NCg0KVGhpcyBmaWxlIGRvd25sb2FkcyBwcmljaW5nIGRhdGEgZm9yIHRoZSBTUDUwMCwgRUFGRSwgR1NDSSBhbmQgTkFSRUlUIGZyb20gQmxvb21iZXJnLg0KDQpEb3dubG9hZCBkYXRhIGlzIGNvbnZlcnRlZCB0byBtb250aGx5IGRhdGEgYmV0d2VlbiAzMS8xMi8xOTcxIHVudGlsIDMxLzEyLzIwMTYgdG8gYmUgYWJsZSB0byByZXBsaWNhdGUgRmFiZXIncyBvcmlnaW5hbCByZXNlYXJjaC4gQXQgYSBsYXRlciBzdGFnZSB0aGlzIGNhbiBiZSBtb2RpZmllZCB0byBkYWlseSBvciB3ZWVrbHkgZGF0YSBpZiByZXF1aXJlZC4NCg0KQWxsIGluZGljZXMgYXJlIHRvdGFsIHJldHVybiBpbmRpY2VzIHByb3ZpZGVkIGJ5IEJsb29tYmVyZy4NCg0KDQpgYGB7cn0NCg0KYGBgDQoNCg==</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIkJsb29tYmVyZyBEYXRhIERvd25sb2FkIg0Kb3V0cHV0OiBodG1sX25vdGVib29rDQotLS0NCg0KVGhpcyBmaWxlIGRvd25sb2FkcyBwcmljaW5nIGRhdGEgZm9yIHRoZSBTUDUwMCwgRUFGRSwgR1NDSSBhbmQgTkFSRUlUIGZyb20gQmxvb21iZXJnLg0KDQpEb3dubG9hZCBkYXRhIGlzIGNvbnZlcnRlZCB0byBtb250aGx5IGRhdGEgYmV0d2VlbiAzMS8xMi8xOTcxIHVudGlsIDMxLzEyLzIwMTYgdG8gYmUgYWJsZSB0byByZXBsaWNhdGUgRmFiZXIncyBvcmlnaW5hbCByZXNlYXJjaC4gQXQgYSBsYXRlciBzdGFnZSB0aGlzIGNhbiBiZSBtb2RpZmllZCB0byBkYWlseSBvciB3ZWVrbHkgZGF0YSBpZiByZXF1aXJlZC4NCg0KQWxsIGluZGljZXMgYXJlIHRvdGFsIHJldHVybiBpbmRpY2VzIHByb3ZpZGVkIGJ5IEJsb29tYmVyZy4NCg0KYGBge3J9DQojY2xlYW4gd29ya3NwYWNlIA0KI3JtKGxpc3Q9bHMoKVshIGxzKCkgJWluJSBjKCJvYmplY3QxIiwib2JqZWN0MiIpXSkgI3JlbW92ZSBhbGwgYnV0IHRoZSBvYmplY3RzIHlvdSBkZWZpbmUgZS5nLiBvYmplY3QxIGFuZCBvYmplY3QyDQpgYGANCg0KYGBge3IsIG1lc3NhZ2U9RkFMU0V9DQojbG9hZCByZXF1aXJlZCBwYWNrYWdlcw0KbGlicmFyeShSYmxwYXBpKQ0KbGlicmFyeShxdWFudHN0cmF0KSANCmxpYnJhcnkocXVhbnRtb2QpDQpsaWJyYXJ5KFBlcmZvcm1hbmNlQW5hbHl0aWNzKQ0KbGlicmFyeSh0aWR5cXVhbnQpDQpgYGANCg0KYGBge3J9DQojY29ubmVjdCB0byBibG9vbWJlcmcNCmJscENvbm5lY3QoKQ0KYGBgDQoNCmBgYHtyfQ0KI0Rvd25sb2FkIGJsb29tYmVyZyBkYXRhIGZvciBpbmRpY2VzIEZhYmVyIHVzZWQNCnN5bWJvbHMgPC0gYygiU1BUUjIgSW5kZXgiLCAiR0REVUVBRkUgSU5ERVgiLCAiU1BHU0NJVFIgSU5ERVgiLCJGTkNPVFIgSW5kZXgiKQ0KDQojU2V0IHRpbWUgcGVyaW9kDQpzdGFydC5kYXRlIDwtIGFzLkRhdGUoIjE5NzEtMTItMzEiKQ0KZW5kLmRhdGUgPC0gYXMuRGF0ZSgiMjAxNi0xMi0zMSIpDQpgYGANCg0KYGBge3J9DQojRG93bmxvYWQgZGF0YSBmcm9tIEJsb29tYmVyZw0KDQojb3B0IDwtIGMoInBlcmlvZGljaXR5U2VsZWN0aW9uIj0iTU9OVEhMWSIpIA0KI2lzIHRoZXJlIGFuIG9wdGlvbiBmb3IgbGFzdCBkYXkgb2YgdGhlIG1vbnRoPyBwZXJoYXBzIGluY2x1ZGUgbm9uIHRyYWRpbmcgZGF5cz8gY3VycmVudGx5IGdpdmVzIGRpZmZlcmVudCBkYXRlcyB0byBmcmVkIGRvd25sb2FkIGFuZCByZXF1aWVzIHVzZSBvZiB0by5tb250aGx5IGZ1bmN0aW9uIGJlbG93DQoNCkJsb29tYmVyZ0RhdGEgPC0gYmRoKHNlY3VyaXRpZXMgPSBzeW1ib2xzLCANCiAgICAgICAgICAgIGMoIlBYX0xBU1QiKSwgDQogICAgICAgICAgICBzdGFydC5kYXRlPSBzdGFydC5kYXRlLA0KICAgICAgICAgICAgZW5kLmRhdGUgPSBlbmQuZGF0ZQ0KICAgICAgICAgICAgI29wdGlvbnM9b3B0DQogICAgICAgICAgICApDQoNCnJtKHN5bWJvbHMsc3RhcnQuZGF0ZSxlbmQuZGF0ZSkNCmBgYA0KDQpgYGB7cn0NCiNjb252ZXJ0IEJsb29tYmVyZyBkYXRhIGludG8gaW5kaXZpZHVhbCB4dHMgZmlsZXMgDQoNCiN0byBkbyBsYXRlciBzZWUgaWYgaSBjYW4gZG8gaW4gUmJscGFwaSBkb3dubG9hZCBhcyB4dHM/IG9yIGNyZWF0ZSBhIGZ1bmN0aW9uL2xvb3A/KQ0KI25vdGUgdXNpbmcgb3B0IDwtIGMoInBlcmlvZGljaXR5U2VsZWN0aW9uIj0iTU9OVEhMWSIpIGluIHRoZSBCREggcmVzdWx0cyBpbiBkaWZmZXJlbnQgbGFzdCBkYXlzIG9mIHRoZSBtb250aCB0byBmcmVkDQoNClNQNTAwIDwtIHh0cyhCbG9vbWJlcmdEYXRhJGBTUFRSMiBJbmRleGBbLC0xXSxCbG9vbWJlcmdEYXRhJGBTUFRSMiBJbmRleGBbLDFdKQ0KI2NvbG5hbWVzKFNQNTAwKSA8LSBjKCJTUDUwMC5DbG9zZSIpIC0gbmVlZCB0aGlzIGlmIGRvbid0IHVzZSB0by5tb250aGx5Pw0KU1A1MDAgPC0gdG8ubW9udGhseShTUDUwMCxpbmRleEF0PSdsYXN0b2YnLGRyb3AudGltZT1UUlVFKVssNF0gI2NvbnZlcnQgdG8gbW9udGhseQ0KDQpFQUZFIDwtIHh0cyhCbG9vbWJlcmdEYXRhJGBHRERVRUFGRSBJTkRFWGBbLC0xXSxCbG9vbWJlcmdEYXRhJGBHRERVRUFGRSBJTkRFWGBbLDFdKQ0KRUFGRSA8LSB0by5tb250aGx5KEVBRkUsaW5kZXhBdD0nbGFzdG9mJyxkcm9wLnRpbWU9VFJVRSlbLDRdICNjb252ZXJ0IHRvIG1vbnRobHkNCg0KR1NDSSA8LSB4dHMoQmxvb21iZXJnRGF0YSRgU1BHU0NJVFIgSU5ERVhgWywtMV0sQmxvb21iZXJnRGF0YSRgU1BHU0NJVFIgSU5ERVhgWywxXSkNCkdTQ0kgPC0gdG8ubW9udGhseShHU0NJLGluZGV4QXQ9J2xhc3RvZicsZHJvcC50aW1lPVRSVUUpWyw0XSAjY29udmVydCB0byBtb250aGx5DQoNCk5BUkVJVCA8LSB4dHMoQmxvb21iZXJnRGF0YSRgRk5DT1RSIEluZGV4YFssLTFdLEJsb29tYmVyZ0RhdGEkYEZOQ09UUiBJbmRleGBbLDFdKQ0KTkFSRUlUIDwtIHRvLm1vbnRobHkoTkFSRUlULGluZGV4QXQ9J2xhc3RvZicsZHJvcC50aW1lPVRSVUUpWyw0XSAjY29udmVydCB0byBtb250aGx5DQoNCnJtKEJsb29tYmVyZ0RhdGEpDQpgYGANCg0KDQpgYGB7cn0NCiNzYXZlIGFzIENTViBmaWxlcyBmb3IgdXNlIGluIG90aGVyIGZpbGVzIC0gY2hhbmdlIHRvIGxvb3AgYXQgc29tZSBwb2ludA0Kd3JpdGUuem9vKFNQNTAwLCBmaWxlPSJDU1YgRmlsZXMvU1A1MDAuY3N2Iiwgc2VwPSIsIikNCndyaXRlLnpvbyhOQVJFSVQsIGZpbGU9IkNTViBGaWxlcy9OQVJFSVQuY3N2Iiwgc2VwPSIsIikNCndyaXRlLnpvbyhFQUZFLCBmaWxlPSJDU1YgRmlsZXMvRUFGRS5jc3YiLCBzZXA9IiwiKQ0Kd3JpdGUuem9vKEdTQ0ksIGZpbGU9IkNTViBGaWxlcy9HU0NJLmNzdiIsIHNlcD0iLCIpDQpgYGANCg0K</div>
 
 
 
