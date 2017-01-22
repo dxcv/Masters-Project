@@ -7,7 +7,7 @@ This file downloads the T-Bills rate
 
 ```{r}
 #clean workspace 
-#rm(list=ls()[! ls() %in% c("object1","object2")]) #remove all but the objects you define e.g. object1 and object2
+rm(list=ls()[! ls() %in% c("object1","object2")]) #remove all but the objects you define e.g. object1 and object2
 ```
 
 ```{r, message=FALSE}
@@ -17,6 +17,7 @@ library(quantstrat)
 library(quantmod)
 library(PerformanceAnalytics)
 library(tidyquant)
+library(tidyverse)
 ```
 
 ```{r}
@@ -34,5 +35,31 @@ rm(start.date,end.date)
 
 ```{r}
 #save as CSV files
-write.zoo(Tbill.yield, file="CSV files/TBills.csv", sep=",")
+write.zoo(Tbill.yield, file="CSV files/TBillYields.csv", sep=",")
 ```
+
+```{r}
+TRCalcs <- Tbill.yield
+TRCalcs$Yield <- Tbill.yield/12/100
+TRCalcs$Index <- 100
+
+for (i in 2:NROW(TRCalcs)-1){
+  TRCalcs$Index[i+1,1] <- (1+TRCalcs$Yield[i])*TRCalcs$Index[i]
+}
+
+TBillIndex <- TRCalcs[,3]
+colnames(TBillIndex) <- c("TBills.Close")
+```
+
+To do:
+
+* check this is right way to calculate TR index
+* Can this be done better with a mutate?
+
+```{r}
+#save as CSV files
+write.zoo(TBillIndex, file="CSV files/TBills.csv", sep=",")
+```
+
+
+

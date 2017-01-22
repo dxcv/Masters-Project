@@ -175,36 +175,44 @@ $(document).ready(function () {
 <p>This file downloads the T-Bills rate</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2NsZWFuIHdvcmtzcGFjZSBcbiNybShsaXN0PWxzKClbISBscygpICVpbiUgYyhcIm9iamVjdDFcIixcIm9iamVjdDJcIildKSAjcmVtb3ZlIGFsbCBidXQgdGhlIG9iamVjdHMgeW91IGRlZmluZSBlLmcuIG9iamVjdDEgYW5kIG9iamVjdDJcbmBgYCJ9 -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2NsZWFuIHdvcmtzcGFjZSBcbnJtKGxpc3Q9bHMoKVshIGxzKCkgJWluJSBjKFwib2JqZWN0MVwiLFwib2JqZWN0MlwiKV0pICNyZW1vdmUgYWxsIGJ1dCB0aGUgb2JqZWN0cyB5b3UgZGVmaW5lIGUuZy4gb2JqZWN0MSBhbmQgb2JqZWN0MlxuYGBgIn0= -->
 <pre class="r"><code>#clean workspace 
-#rm(list=ls()[! ls() %in% c(&quot;object1&quot;,&quot;object2&quot;)]) #remove all but the objects you define e.g. object1 and object2</code></pre>
+rm(list=ls()[! ls() %in% c(&quot;object1&quot;,&quot;object2&quot;)]) #remove all but the objects you define e.g. object1 and object2</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2xvYWQgcmVxdWlyZWQgcGFja2FnZXNcbmxpYnJhcnkoUlF1YW50TGliKVxubGlicmFyeShxdWFudHN0cmF0KSBcbmxpYnJhcnkocXVhbnRtb2QpXG5saWJyYXJ5KFBlcmZvcm1hbmNlQW5hbHl0aWNzKVxubGlicmFyeSh0aWR5cXVhbnQpXG5gYGAifQ== -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2xvYWQgcmVxdWlyZWQgcGFja2FnZXNcbmxpYnJhcnkoUlF1YW50TGliKVxubGlicmFyeShxdWFudHN0cmF0KSBcbmxpYnJhcnkocXVhbnRtb2QpXG5saWJyYXJ5KFBlcmZvcm1hbmNlQW5hbHl0aWNzKVxubGlicmFyeSh0aWR5cXVhbnQpXG5saWJyYXJ5KHRpZHl2ZXJzZSlcbmBgYCJ9 -->
 <pre class="r"><code>#load required packages
 library(RQuantLib)
 library(quantstrat) 
 library(quantmod)
 library(PerformanceAnalytics)
-library(tidyquant)</code></pre>
+library(tidyquant)
+library(tidyverse)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0Rvd25sb2FkIEZSRUQgZGF0YSBmb3IgMTBZciBVUyBCb25kc1xuc3RhcnQuZGF0ZSA8LSBhcy5EYXRlKFwiMTk3Mi0xLTMxXCIpXG5lbmQuZGF0ZSA8LSBhcy5EYXRlKFwiMjAxNi0xMi0zMVwiKVxuXG5nZXRTeW1ib2xzKFwiRFRCM1wiLCBzcmM9XCJGUkVEXCIpICNkb3dubG9hZCBkYXRhXG5cblRiaWxsLnlpZWxkIDwtIHRvLm1vbnRobHkoRFRCMyxpbmRleEF0PSdsYXN0b2YnLGRyb3AudGltZT1UUlVFKVssNF0gI2NvbnZlcnQgdG8gbW9udGhseVxuVGJpbGwueWllbGQgPC0gVGJpbGwueWllbGRbcGFzdGUoc3RhcnQuZGF0ZSxlbmQuZGF0ZSxzZXA9XCIvXCIpXSAjc3Vic2V0IHRvIHJlcXVpcmVkIHBlcmlvZFxuXG5ybShzdGFydC5kYXRlLGVuZC5kYXRlKVxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0Rvd25sb2FkIEZSRUQgZGF0YSBmb3IgMTBZciBVUyBCb25kc1xuc3RhcnQuZGF0ZSA8LSBhcy5EYXRlKFwiMTk3Mi0xLTMxXCIpXG5lbmQuZGF0ZSA8LSBhcy5EYXRlKFwiMjAxNi0xMi0zMVwiKVxuZ2V0U3ltYm9scyhcIkRUQjNcIiwgc3JjPVwiRlJFRFwiKSAjZG93bmxvYWQgZGF0YVxuYGBgIn0= -->
 <pre class="r"><code>#Download FRED data for 10Yr US Bonds
 start.date &lt;- as.Date(&quot;1972-1-31&quot;)
 end.date &lt;- as.Date(&quot;2016-12-31&quot;)
-
-getSymbols(&quot;DTB3&quot;, src=&quot;FRED&quot;) #download data
-
-Tbill.yield &lt;- to.monthly(DTB3,indexAt='lastof',drop.time=TRUE)[,4] #convert to monthly
-Tbill.yield &lt;- Tbill.yield[paste(start.date,end.date,sep=&quot;/&quot;)] #subset to required period
-
+getSymbols(&quot;DTB3&quot;, src=&quot;FRED&quot;) #download data</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIFwiRFRCM1wiXG4ifQ== -->
+<pre><code>[1] &quot;DTB3&quot;</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuVGJpbGwueWllbGQgPC0gdG8ubW9udGhseShEVEIzLGluZGV4QXQ9J2xhc3RvZicsZHJvcC50aW1lPVRSVUUpWyw0XSAjY29udmVydCB0byBtb250aGx5XG5gYGAifQ== -->
+<pre class="r"><code>Tbill.yield &lt;- to.monthly(DTB3,indexAt='lastof',drop.time=TRUE)[,4] #convert to monthly</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoibWlzc2luZyB2YWx1ZXMgcmVtb3ZlZCBmcm9tIGRhdGFcbiJ9 -->
+<pre><code>missing values removed from data</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuVGJpbGwueWllbGQgPC0gVGJpbGwueWllbGRbcGFzdGUoc3RhcnQuZGF0ZSxlbmQuZGF0ZSxzZXA9XCIvXCIpXSAjc3Vic2V0IHRvIHJlcXVpcmVkIHBlcmlvZFxucm0oc3RhcnQuZGF0ZSxlbmQuZGF0ZSlcbmBgYCJ9 -->
+<pre class="r"><code>Tbill.yield &lt;- Tbill.yield[paste(start.date,end.date,sep=&quot;/&quot;)] #subset to required period
 rm(start.date,end.date)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
@@ -216,8 +224,39 @@ rm(start.date,end.date)</code></pre>
 write.zoo(Tbill.yield, file=&quot;CSV files/TBills.csv&quot;, sep=&quot;,&quot;)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZm9yIChpIGluIDE6TlJPVyhUUkNhbGNzKSl7XG4gIFRSQ2FsY3MkSW5kZXhbaSsxLDFdIDwtIDErVFJDYWxjcyRZaWVsZFtpKzFdXG59XG5cbmBgYCJ9 -->
+<pre class="r"><code>for (i in 1:NROW(TRCalcs)){
+  TRCalcs$Index[i+1,1] &lt;- 1+TRCalcs$Yield[i+1]
+}
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiRXJyb3IgaW4gYFsueHRzYChUUkNhbGNzJFlpZWxkLCBpICsgMSkgOiBzdWJzY3JpcHQgb3V0IG9mIGJvdW5kc1xuIn0= -->
+<pre><code>Error in `[.xts`(TRCalcs$Yield, i + 1) : subscript out of bounds</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>To do:</p>
+<ul>
+<li>check this is right way to calculate TR index</li>
+<li>Can this be done better with a mutate?</li>
+</ul>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxud3JpdGUuem9vKFRCaWxsSW5kZXgsIGZpbGU9XCJDU1YgZmlsZXMvVEJpbGxzLmNzdlwiLCBzZXA9XCIsXCIpXG5cbmBgYCJ9 -->
+<pre class="r"><code>write.zoo(TBillIndex, file=&quot;CSV files/TBills.csv&quot;, sep=&quot;,&quot;)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiRXJyb3I6IGFsbChuYW1lcyhkeCkgIT0gaW5kZXgubmFtZSkgaXMgbm90IFRSVUVcbiJ9 -->
+<pre><code>Error: all(names(dx) != index.name) is not TRUE</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIkZSRUQgVC1CaWxscyBEb3dubG9hZCINCm91dHB1dDogaHRtbF9ub3RlYm9vaw0KLS0tDQoNClRoaXMgZmlsZSBkb3dubG9hZHMgdGhlIFQtQmlsbHMgcmF0ZQ0KDQpgYGB7cn0NCiNjbGVhbiB3b3Jrc3BhY2UgDQojcm0obGlzdD1scygpWyEgbHMoKSAlaW4lIGMoIm9iamVjdDEiLCJvYmplY3QyIildKSAjcmVtb3ZlIGFsbCBidXQgdGhlIG9iamVjdHMgeW91IGRlZmluZSBlLmcuIG9iamVjdDEgYW5kIG9iamVjdDINCmBgYA0KDQpgYGB7ciwgbWVzc2FnZT1GQUxTRX0NCiNsb2FkIHJlcXVpcmVkIHBhY2thZ2VzDQpsaWJyYXJ5KFJRdWFudExpYikNCmxpYnJhcnkocXVhbnRzdHJhdCkgDQpsaWJyYXJ5KHF1YW50bW9kKQ0KbGlicmFyeShQZXJmb3JtYW5jZUFuYWx5dGljcykNCmxpYnJhcnkodGlkeXF1YW50KQ0KYGBgDQoNCmBgYHtyfQ0KI0Rvd25sb2FkIEZSRUQgZGF0YSBmb3IgMTBZciBVUyBCb25kcw0Kc3RhcnQuZGF0ZSA8LSBhcy5EYXRlKCIxOTcyLTEtMzEiKQ0KZW5kLmRhdGUgPC0gYXMuRGF0ZSgiMjAxNi0xMi0zMSIpDQoNCmdldFN5bWJvbHMoIkRUQjMiLCBzcmM9IkZSRUQiKSAjZG93bmxvYWQgZGF0YQ0KDQpUYmlsbC55aWVsZCA8LSB0by5tb250aGx5KERUQjMsaW5kZXhBdD0nbGFzdG9mJyxkcm9wLnRpbWU9VFJVRSlbLDRdICNjb252ZXJ0IHRvIG1vbnRobHkNClRiaWxsLnlpZWxkIDwtIFRiaWxsLnlpZWxkW3Bhc3RlKHN0YXJ0LmRhdGUsZW5kLmRhdGUsc2VwPSIvIildICNzdWJzZXQgdG8gcmVxdWlyZWQgcGVyaW9kDQoNCnJtKHN0YXJ0LmRhdGUsZW5kLmRhdGUpDQpgYGANCg0KYGBge3J9DQojc2F2ZSBhcyBDU1YgZmlsZXMNCndyaXRlLnpvbyhUYmlsbC55aWVsZCwgZmlsZT0iQ1NWIGZpbGVzL1RCaWxscy5jc3YiLCBzZXA9IiwiKQ0KYGBg</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIkZSRUQgVC1CaWxscyBEb3dubG9hZCINCm91dHB1dDogaHRtbF9ub3RlYm9vaw0KLS0tDQoNClRoaXMgZmlsZSBkb3dubG9hZHMgdGhlIFQtQmlsbHMgcmF0ZQ0KDQpgYGB7cn0NCiNjbGVhbiB3b3Jrc3BhY2UgDQpybShsaXN0PWxzKClbISBscygpICVpbiUgYygib2JqZWN0MSIsIm9iamVjdDIiKV0pICNyZW1vdmUgYWxsIGJ1dCB0aGUgb2JqZWN0cyB5b3UgZGVmaW5lIGUuZy4gb2JqZWN0MSBhbmQgb2JqZWN0Mg0KYGBgDQoNCmBgYHtyLCBtZXNzYWdlPUZBTFNFfQ0KI2xvYWQgcmVxdWlyZWQgcGFja2FnZXMNCmxpYnJhcnkoUlF1YW50TGliKQ0KbGlicmFyeShxdWFudHN0cmF0KSANCmxpYnJhcnkocXVhbnRtb2QpDQpsaWJyYXJ5KFBlcmZvcm1hbmNlQW5hbHl0aWNzKQ0KbGlicmFyeSh0aWR5cXVhbnQpDQpsaWJyYXJ5KHRpZHl2ZXJzZSkNCmBgYA0KDQpgYGB7cn0NCiNEb3dubG9hZCBGUkVEIGRhdGEgZm9yIDEwWXIgVVMgQm9uZHMNCnN0YXJ0LmRhdGUgPC0gYXMuRGF0ZSgiMTk3Mi0xLTMxIikNCmVuZC5kYXRlIDwtIGFzLkRhdGUoIjIwMTYtMTItMzEiKQ0KDQpnZXRTeW1ib2xzKCJEVEIzIiwgc3JjPSJGUkVEIikgI2Rvd25sb2FkIGRhdGENCg0KVGJpbGwueWllbGQgPC0gdG8ubW9udGhseShEVEIzLGluZGV4QXQ9J2xhc3RvZicsZHJvcC50aW1lPVRSVUUpWyw0XSAjY29udmVydCB0byBtb250aGx5DQpUYmlsbC55aWVsZCA8LSBUYmlsbC55aWVsZFtwYXN0ZShzdGFydC5kYXRlLGVuZC5kYXRlLHNlcD0iLyIpXSAjc3Vic2V0IHRvIHJlcXVpcmVkIHBlcmlvZA0KDQpybShzdGFydC5kYXRlLGVuZC5kYXRlKQ0KYGBgDQoNCmBgYHtyfQ0KI3NhdmUgYXMgQ1NWIGZpbGVzDQp3cml0ZS56b28oVGJpbGwueWllbGQsIGZpbGU9IkNTViBmaWxlcy9UQmlsbFlpZWxkcy5jc3YiLCBzZXA9IiwiKQ0KYGBgDQoNCmBgYHtyfQ0KVFJDYWxjcyA8LSBUYmlsbC55aWVsZA0KVFJDYWxjcyRZaWVsZCA8LSBUYmlsbC55aWVsZC8xMi8xMDANClRSQ2FsY3MkSW5kZXggPC0gMTAwDQoNCmZvciAoaSBpbiAyOk5ST1coVFJDYWxjcyktMSl7DQogIFRSQ2FsY3MkSW5kZXhbaSsxLDFdIDwtICgxK1RSQ2FsY3MkWWllbGRbaV0pKlRSQ2FsY3MkSW5kZXhbaV0NCn0NCg0KVEJpbGxJbmRleCA8LSBUUkNhbGNzWywzXQ0KY29sbmFtZXMoVEJpbGxJbmRleCkgPC0gYygiVEJpbGxzLkNsb3NlIikNCmBgYA0KDQpUbyBkbzoNCg0KKiBjaGVjayB0aGlzIGlzIHJpZ2h0IHdheSB0byBjYWxjdWxhdGUgVFIgaW5kZXgNCiogQ2FuIHRoaXMgYmUgZG9uZSBiZXR0ZXIgd2l0aCBhIG11dGF0ZT8NCg0KYGBge3J9DQojc2F2ZSBhcyBDU1YgZmlsZXMNCndyaXRlLnpvbyhUQmlsbEluZGV4LCBmaWxlPSJDU1YgZmlsZXMvVEJpbGxzLmNzdiIsIHNlcD0iLCIpDQpgYGANCg0KDQoNCg==</div>
 
 
 
