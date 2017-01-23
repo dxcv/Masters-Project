@@ -183,14 +183,14 @@ rm(list=ls()[! ls() %in% c(&quot;object1&quot;,&quot;object2&quot;)]) #remove al
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2xvYWQgcmVxdWlyZWQgcGFja2FnZXNcbmxpYnJhcnkoUlF1YW50TGliKVxubGlicmFyeShxdWFudHN0cmF0KSBcbmxpYnJhcnkocXVhbnRtb2QpXG5saWJyYXJ5KFBlcmZvcm1hbmNlQW5hbHl0aWNzKVxubGlicmFyeSh0aWR5cXVhbnQpXG5saWJyYXJ5KHRpZHl2ZXJzZSlcbmBgYCJ9 -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2xvYWQgcmVxdWlyZWQgcGFja2FnZXNcbmxpYnJhcnkoUlF1YW50TGliKVxubGlicmFyeShxdWFudHN0cmF0KSBcbmxpYnJhcnkocXVhbnRtb2QpXG5saWJyYXJ5KFBlcmZvcm1hbmNlQW5hbHl0aWNzKVxuI2xpYnJhcnkodGlkeXF1YW50KVxuI2xpYnJhcnkodGlkeXZlcnNlKVxuYGBgIn0= -->
 <pre class="r"><code>#load required packages
 library(RQuantLib)
 library(quantstrat) 
 library(quantmod)
 library(PerformanceAnalytics)
-library(tidyquant)
-library(tidyverse)</code></pre>
+#library(tidyquant)
+#library(tidyverse)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -252,9 +252,77 @@ write.zoo(TBillIndex, file=&quot;CSV files/TBILLS.csv&quot;, sep=&quot;,&quot;)<
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
+<div id="new-calculation-method" class="section level4">
+<h4>new calculation method</h4>
 <!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuVGJpbGwucmV0dXJuIDwtIFRiaWxsLnlpZWxkICNzZXQgdGhpcyB1cCB0byBob2xkIHByaWNlIHJldHVybnNcblRiaWxsLnJldHVyblsxLDFdPC0wXG5jb2xuYW1lcyhUYmlsbC5yZXR1cm4pPC1cIlByaWNlUmV0dXJuXCJcbmZvciAoaSBpbiAxOihOUk9XKFRiaWxsLnlpZWxkKS0xKSkge1xuICBUYmlsbC5yZXR1cm5baSsxLDFdPC1GaXhlZFJhdGVCb25kUHJpY2VCeVlpZWxkKHlpZWxkPVRiaWxsLnlpZWxkW2krMSwxXS8xMDAsaXNzdWVEYXRlPVN5cy5EYXRlKCksIFxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBtYXR1cml0eURhdGU9IGFkdmFuY2UoXCJUQVJHRVRcIiwgU3lzLkRhdGUoKSwgMywgMiksXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJhdGVzPVRiaWxsLnlpZWxkW2ksMV0vMTAwLHBlcmlvZD0yKVsxXS8xMDAtMVxufVxuI1RvdGFsIHJldHVybiB3aWxsIGJlIHRoZSBwcmljZSByZXR1cm4gKyB0aGUgcHJldmlvdXMgbW9udGhzIHlpZWxkIGZvciBvbmUgbW9udGhcblRiaWxsLnRvdGFscmV0dXJuPC1UYmlsbC5yZXR1cm4rbGFnKFRiaWxsLnlpZWxkLGs9MSkvMTIvMTAwXG5UYmlsbC50b3RhbHJldHVyblsxLDFdPC0wXG5jb2xuYW1lcyhUYmlsbC50b3RhbHJldHVybik8LVwiVG90YWwgUmV0dXJuXCJcbiNOb3cgd2UgbmVlZCB0byBjcmVhdGUgYSBwcmljZSBpbmRleCB3aXRoIGJhc2UgMTAwXG5UQklMTFRSIDwtIGN1bXByb2QoMSArIFRiaWxsLnRvdGFscmV0dXJuKSAqIDEwMFxuY29sbmFtZXMoVEJJTExUUikgPC0gYyhcIlRCSUxMVFIuQ2xvc2VcIilcbmBgYCJ9 -->
+<pre class="r"><code>Tbill.return &lt;- Tbill.yield #set this up to hold price returns
+Tbill.return[1,1]&lt;-0
+colnames(Tbill.return)&lt;-&quot;PriceReturn&quot;
+for (i in 1:(NROW(Tbill.yield)-1)) {
+  Tbill.return[i+1,1]&lt;-FixedRateBondPriceByYield(yield=Tbill.yield[i+1,1]/100,issueDate=Sys.Date(), 
+                                                     maturityDate= advance(&quot;TARGET&quot;, Sys.Date(), 3, 2),
+                                                     rates=Tbill.yield[i,1]/100,period=2)[1]/100-1
+}
+#Total return will be the price return + the previous months yield for one month
+Tbill.totalreturn&lt;-Tbill.return+lag(Tbill.yield,k=1)/12/100
+Tbill.totalreturn[1,1]&lt;-0
+colnames(Tbill.totalreturn)&lt;-&quot;Total Return&quot;
+#Now we need to create a price index with base 100
+TBILLTR &lt;- cumprod(1 + Tbill.totalreturn) * 100
+colnames(TBILLTR) &lt;- c(&quot;TBILLTR.Close&quot;)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuQWxsQXNzZXRzIDwtIFRCSUxMVFJbXCIxOTcyLTEyLTMxOjoyMDE2LTEyLTMxXCJdXG5BbGxBc3NldHMucmV0IDwtIFJldHVybi5jYWxjdWxhdGUoQWxsQXNzZXRzKVstMSxdXG4jc3Vic2V0IHRvIHJlcXVpcmVkIGRhdGVzXG5SZXR1cm5zIDwtIEFsbEFzc2V0cy5yZXRbXCIxOTcyLTEyLTMxOjoyMDEyLTEyLTMxXCJdXG5zdGF0cyA8LSByYmluZChSZXR1cm4uYW5udWFsaXplZChSZXR1cm5zLHNjYWxlID0gMTIpKjEwMCwgXG4gICAgICAgICAgICAgICBTdGREZXYuYW5udWFsaXplZChSZXR1cm5zLHNjYWxlID0gMTIpKjEwMCwgXG4gICAgICAgICAgICAgICBTaGFycGVSYXRpby5hbm51YWxpemVkKFJldHVybnMsUmYgPSBSZXR1cm5zKSxcbiAgICAgICAgICAgICAgIG1heERyYXdkb3duKFJldHVybnMsc2NhbGUgPSAxMixpbnZlcnQgPSBGQUxTRSkqMTAwLFxuICAgICAgICAgICAgICAgYyg0LjMwKSlcbnJvd25hbWVzKHN0YXRzKSA8LSBjKFwiUmV0dXJuXCIsXCJWb2xhdGlsaXR5XCIsXCJTaGFycGVcIixcIk1heEREXCIsXCJJbmZsYXRpb24gQ0FHUlwiKVxucm91bmQoc3RhdHMsMilcbmBgYCJ9 -->
+<pre class="r"><code>AllAssets &lt;- TBILLTR[&quot;1972-12-31::2016-12-31&quot;]
+AllAssets.ret &lt;- Return.calculate(AllAssets)[-1,]
+#subset to required dates
+Returns &lt;- AllAssets.ret[&quot;1972-12-31::2012-12-31&quot;]
+stats &lt;- rbind(Return.annualized(Returns,scale = 12)*100, 
+               StdDev.annualized(Returns,scale = 12)*100, 
+               SharpeRatio.annualized(Returns,Rf = Returns),
+               maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
+               c(4.30))
+rownames(stats) &lt;- c(&quot;Return&quot;,&quot;Volatility&quot;,&quot;Sharpe&quot;,&quot;MaxDD&quot;,&quot;Inflation CAGR&quot;)
+round(stats,2)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICAgICAgICAgVEJJTExUUi5DbG9zZVxuUmV0dXJuICAgICAgICAgICAgICAgICAgNS40NVxuVm9sYXRpbGl0eSAgICAgICAgICAgICAgMS4wN1xuU2hhcnBlICAgICAgICAgICAgICAgICAgMC4wMFxuTWF4REQgICAgICAgICAgICAgICAgICAtMC4wNVxuSW5mbGF0aW9uIENBR1IgICAgICAgICAgNC4zMFxuIn0= -->
+<pre><code>               TBILLTR.Close
+Return                  5.45
+Volatility              1.07
+Sharpe                  0.00
+MaxDD                  -0.05
+Inflation CAGR          4.30</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuU2hhcnBlUmF0aW8uYW5udWFsaXplZChSZXR1cm5zW1wiMTk3Mi0xMi0zMTo6MjAxMi0xMi0zMVwiXSwgc2NhbGUgPSAxMiwgUmYgPSBSZXR1cm5zW1wiMTk3Mi0xMi0zMTo6MjAxMi0xMi0zMVwiXSxnZW9tZXRyaWMgPSBUUlVFKVxuXG5gYGAifQ== -->
+<pre class="r"><code>SharpeRatio.annualized(Returns[&quot;1972-12-31::2012-12-31&quot;], scale = 12, Rf = Returns[&quot;1972-12-31::2012-12-31&quot;],geometric = TRUE)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFRCSUxMVFIuQ2xvc2VcbkFubnVhbGl6ZWQgU2hhcnBlIFJhdGlvIChSZj01LjMlKSAgICAgICAgICAgICAwXG4ifQ== -->
+<pre><code>                                  TBILLTR.Close
+Annualized Sharpe Ratio (Rf=5.3%)             0</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="tbilltr-doesnt-equal-expected-need-to-check-calcs" class="section level4">
+<h4>TBILLTR doesn’t equal expected need to check calcs</h4>
+</div>
+<div id="managers-example" class="section level3">
+<h3>managers example</h3>
+<p>data(managers) TbillMonthlyTReturns &lt;- managers[,10] Return.annualized(TbillMonthlyTReturns[“1998//2002”]) SharpeRatio.annualized(TbillMonthlyTReturns[“1998//2002”],TbillMonthlyTReturns[“1998//2002”])</p>
+<!-- rnb-text-end -->
+</div>
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIkZSRUQgVC1CaWxscyBEb3dubG9hZCINCm91dHB1dDogaHRtbF9ub3RlYm9vaw0KLS0tDQoNClRoaXMgZmlsZSBkb3dubG9hZHMgdGhlIFQtQmlsbHMgcmF0ZQ0KDQpgYGB7cn0NCiNjbGVhbiB3b3Jrc3BhY2UgDQpybShsaXN0PWxzKClbISBscygpICVpbiUgYygib2JqZWN0MSIsIm9iamVjdDIiKV0pICNyZW1vdmUgYWxsIGJ1dCB0aGUgb2JqZWN0cyB5b3UgZGVmaW5lIGUuZy4gb2JqZWN0MSBhbmQgb2JqZWN0Mg0KYGBgDQoNCmBgYHtyLCBtZXNzYWdlPUZBTFNFfQ0KI2xvYWQgcmVxdWlyZWQgcGFja2FnZXMNCmxpYnJhcnkoUlF1YW50TGliKQ0KbGlicmFyeShxdWFudHN0cmF0KSANCmxpYnJhcnkocXVhbnRtb2QpDQpsaWJyYXJ5KFBlcmZvcm1hbmNlQW5hbHl0aWNzKQ0KbGlicmFyeSh0aWR5cXVhbnQpDQpsaWJyYXJ5KHRpZHl2ZXJzZSkNCmBgYA0KDQpgYGB7cn0NCiNEb3dubG9hZCBGUkVEIGRhdGEgZm9yIDEwWXIgVVMgQm9uZHMNCnN0YXJ0LmRhdGUgPC0gYXMuRGF0ZSgiMTk3Mi0xLTMxIikNCmVuZC5kYXRlIDwtIGFzLkRhdGUoIjIwMTYtMTItMzEiKQ0KDQpnZXRTeW1ib2xzKCJEVEIzIiwgc3JjPSJGUkVEIikgI2Rvd25sb2FkIGRhdGENCg0KVGJpbGwueWllbGQgPC0gdG8ubW9udGhseShEVEIzLGluZGV4QXQ9J2xhc3RvZicsZHJvcC50aW1lPVRSVUUpWyw0XSAjY29udmVydCB0byBtb250aGx5DQpUYmlsbC55aWVsZCA8LSBUYmlsbC55aWVsZFtwYXN0ZShzdGFydC5kYXRlLGVuZC5kYXRlLHNlcD0iLyIpXSAjc3Vic2V0IHRvIHJlcXVpcmVkIHBlcmlvZA0KDQpybShzdGFydC5kYXRlLGVuZC5kYXRlKQ0KYGBgDQoNCmBgYHtyfQ0KI3NhdmUgYXMgQ1NWIGZpbGVzDQp3cml0ZS56b28oVGJpbGwueWllbGQsIGZpbGU9IkNTViBmaWxlcy9UQmlsbFlpZWxkcy5jc3YiLCBzZXA9IiwiKQ0KYGBgDQoNCmBgYHtyfQ0KVFJDYWxjcyA8LSBUYmlsbC55aWVsZA0KVFJDYWxjcyRZaWVsZCA8LSBUYmlsbC55aWVsZC8xMi8xMDANClRSQ2FsY3MkSW5kZXggPC0gMTAwDQoNCmZvciAoaSBpbiAyOk5ST1coVFJDYWxjcyktMSl7DQogIFRSQ2FsY3MkSW5kZXhbaSsxLDFdIDwtICgxK1RSQ2FsY3MkWWllbGRbaV0pKlRSQ2FsY3MkSW5kZXhbaV0NCn0NCg0KVEJpbGxJbmRleCA8LSBUUkNhbGNzWywzXQ0KY29sbmFtZXMoVEJpbGxJbmRleCkgPC0gYygiVEJJTExTLkNsb3NlIikNCmBgYA0KDQpUbyBkbzoNCg0KKiBjaGVjayB0aGlzIGlzIHJpZ2h0IHdheSB0byBjYWxjdWxhdGUgVFIgaW5kZXggZm9yIFJmDQoqIENhbiB0aGlzIGJlIGRvbmUgYmV0dGVyIHdpdGggYSBtdXRhdGU/DQoNCmBgYHtyfQ0KI3NhdmUgYXMgQ1NWIGZpbGVzDQp3cml0ZS56b28oVEJpbGxJbmRleCwgZmlsZT0iQ1NWIGZpbGVzL1RCSUxMUy5jc3YiLCBzZXA9IiwiKQ0KYGBgDQoNCg0KDQo=</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIkZSRUQgVC1CaWxscyBEb3dubG9hZCINCm91dHB1dDogaHRtbF9ub3RlYm9vaw0KLS0tDQoNClRoaXMgZmlsZSBkb3dubG9hZHMgdGhlIFQtQmlsbHMgcmF0ZQ0KDQpgYGB7cn0NCiNjbGVhbiB3b3Jrc3BhY2UgDQpybShsaXN0PWxzKClbISBscygpICVpbiUgYygib2JqZWN0MSIsIm9iamVjdDIiKV0pICNyZW1vdmUgYWxsIGJ1dCB0aGUgb2JqZWN0cyB5b3UgZGVmaW5lIGUuZy4gb2JqZWN0MSBhbmQgb2JqZWN0Mg0KYGBgDQoNCmBgYHtyLCBtZXNzYWdlPUZBTFNFfQ0KI2xvYWQgcmVxdWlyZWQgcGFja2FnZXMNCmxpYnJhcnkoUlF1YW50TGliKQ0KbGlicmFyeShxdWFudHN0cmF0KSANCmxpYnJhcnkocXVhbnRtb2QpDQpsaWJyYXJ5KFBlcmZvcm1hbmNlQW5hbHl0aWNzKQ0KI2xpYnJhcnkodGlkeXF1YW50KQ0KI2xpYnJhcnkodGlkeXZlcnNlKQ0KYGBgDQoNCmBgYHtyfQ0KI0Rvd25sb2FkIEZSRUQgZGF0YSBmb3IgMTBZciBVUyBCb25kcw0Kc3RhcnQuZGF0ZSA8LSBhcy5EYXRlKCIxOTcyLTEtMzEiKQ0KZW5kLmRhdGUgPC0gYXMuRGF0ZSgiMjAxNi0xMi0zMSIpDQoNCmdldFN5bWJvbHMoIkRUQjMiLCBzcmM9IkZSRUQiKSAjZG93bmxvYWQgZGF0YQ0KDQpUYmlsbC55aWVsZCA8LSB0by5tb250aGx5KERUQjMsaW5kZXhBdD0nbGFzdG9mJyxkcm9wLnRpbWU9VFJVRSlbLDRdICNjb252ZXJ0IHRvIG1vbnRobHkNClRiaWxsLnlpZWxkIDwtIFRiaWxsLnlpZWxkW3Bhc3RlKHN0YXJ0LmRhdGUsZW5kLmRhdGUsc2VwPSIvIildICNzdWJzZXQgdG8gcmVxdWlyZWQgcGVyaW9kDQoNCnJtKHN0YXJ0LmRhdGUsZW5kLmRhdGUpDQpgYGANCg0KYGBge3J9DQojc2F2ZSBhcyBDU1YgZmlsZXMNCndyaXRlLnpvbyhUYmlsbC55aWVsZCwgZmlsZT0iQ1NWIGZpbGVzL1RCaWxsWWllbGRzLmNzdiIsIHNlcD0iLCIpDQpgYGANCg0KYGBge3J9DQpUUkNhbGNzIDwtIFRiaWxsLnlpZWxkDQpUUkNhbGNzJFlpZWxkIDwtIFRiaWxsLnlpZWxkLzEyLzEwMA0KVFJDYWxjcyRJbmRleCA8LSAxMDANCg0KZm9yIChpIGluIDI6TlJPVyhUUkNhbGNzKS0xKXsNCiAgVFJDYWxjcyRJbmRleFtpKzEsMV0gPC0gKDErVFJDYWxjcyRZaWVsZFtpXSkqVFJDYWxjcyRJbmRleFtpXQ0KfQ0KDQpUQmlsbEluZGV4IDwtIFRSQ2FsY3NbLDNdDQpjb2xuYW1lcyhUQmlsbEluZGV4KSA8LSBjKCJUQklMTFMuQ2xvc2UiKQ0KYGBgDQoNClRvIGRvOg0KDQoqIGNoZWNrIHRoaXMgaXMgcmlnaHQgd2F5IHRvIGNhbGN1bGF0ZSBUUiBpbmRleCBmb3IgUmYNCiogQ2FuIHRoaXMgYmUgZG9uZSBiZXR0ZXIgd2l0aCBhIG11dGF0ZT8NCg0KYGBge3J9DQojc2F2ZSBhcyBDU1YgZmlsZXMNCndyaXRlLnpvbyhUQmlsbEluZGV4LCBmaWxlPSJDU1YgZmlsZXMvVEJJTExTLmNzdiIsIHNlcD0iLCIpDQpgYGANCg0KIyMjIyBuZXcgY2FsY3VsYXRpb24gbWV0aG9kDQpgYGB7cn0NClRiaWxsLnJldHVybiA8LSBUYmlsbC55aWVsZCAjc2V0IHRoaXMgdXAgdG8gaG9sZCBwcmljZSByZXR1cm5zDQpUYmlsbC5yZXR1cm5bMSwxXTwtMA0KY29sbmFtZXMoVGJpbGwucmV0dXJuKTwtIlByaWNlUmV0dXJuIg0KDQpmb3IgKGkgaW4gMTooTlJPVyhUYmlsbC55aWVsZCktMSkpIHsNCiAgVGJpbGwucmV0dXJuW2krMSwxXTwtRml4ZWRSYXRlQm9uZFByaWNlQnlZaWVsZCh5aWVsZD1UYmlsbC55aWVsZFtpKzEsMV0vMTAwLGlzc3VlRGF0ZT1TeXMuRGF0ZSgpLCANCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbWF0dXJpdHlEYXRlPSBhZHZhbmNlKCJUQVJHRVQiLCBTeXMuRGF0ZSgpLCAzLCAyKSwNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmF0ZXM9VGJpbGwueWllbGRbaSwxXS8xMDAscGVyaW9kPTIpWzFdLzEwMC0xDQp9DQoNCg0KI1RvdGFsIHJldHVybiB3aWxsIGJlIHRoZSBwcmljZSByZXR1cm4gKyB0aGUgcHJldmlvdXMgbW9udGhzIHlpZWxkIGZvciBvbmUgbW9udGgNClRiaWxsLnRvdGFscmV0dXJuPC1UYmlsbC5yZXR1cm4rbGFnKFRiaWxsLnlpZWxkLGs9MSkvMTIvMTAwDQpUYmlsbC50b3RhbHJldHVyblsxLDFdPC0wDQpjb2xuYW1lcyhUYmlsbC50b3RhbHJldHVybik8LSJUb3RhbCBSZXR1cm4iDQoNCiNOb3cgd2UgbmVlZCB0byBjcmVhdGUgYSBwcmljZSBpbmRleCB3aXRoIGJhc2UgMTAwDQpUQklMTFRSIDwtIGN1bXByb2QoMSArIFRiaWxsLnRvdGFscmV0dXJuKSAqIDEwMA0KDQpjb2xuYW1lcyhUQklMTFRSKSA8LSBjKCJUQklMTFRSLkNsb3NlIikNCmBgYA0KDQpgYGB7cn0NCkFsbEFzc2V0cyA8LSBUQklMTFRSWyIxOTcyLTEyLTMxOjoyMDE2LTEyLTMxIl0NCg0KDQpBbGxBc3NldHMucmV0IDwtIFJldHVybi5jYWxjdWxhdGUoQWxsQXNzZXRzKVstMSxdDQoNCiNzdWJzZXQgdG8gcmVxdWlyZWQgZGF0ZXMNClJldHVybnMgPC0gQWxsQXNzZXRzLnJldFsiMTk3Mi0xMi0zMTo6MjAxMi0xMi0zMSJdDQpzdGF0cyA8LSByYmluZChSZXR1cm4uYW5udWFsaXplZChSZXR1cm5zLHNjYWxlID0gMTIpKjEwMCwgDQogICAgICAgICAgICAgICBTdGREZXYuYW5udWFsaXplZChSZXR1cm5zLHNjYWxlID0gMTIpKjEwMCwgDQogICAgICAgICAgICAgICBTaGFycGVSYXRpby5hbm51YWxpemVkKFJldHVybnMsUmYgPSBSZXR1cm5zKSwNCiAgICAgICAgICAgICAgIG1heERyYXdkb3duKFJldHVybnMsc2NhbGUgPSAxMixpbnZlcnQgPSBGQUxTRSkqMTAwLA0KICAgICAgICAgICAgICAgYyg0LjMwKSkNCg0Kcm93bmFtZXMoc3RhdHMpIDwtIGMoIlJldHVybiIsIlZvbGF0aWxpdHkiLCJTaGFycGUiLCJNYXhERCIsIkluZmxhdGlvbiBDQUdSIikNCg0Kcm91bmQoc3RhdHMsMikNCmBgYA0KDQoNCmBgYHtyfQ0KUmV0dXJuLmFubnVhbGl6ZWQoUmV0dXJucywgc2NhbGUgPSAxMikNCg0KUmV0dXJuLmFubnVhbGl6ZWQoUmV0dXJucywgZ2VvbWV0cmljID0gRkFMU0UpDQoNClNoYXJwZVJhdGlvLmFubnVhbGl6ZWQoUmV0dXJuc1siMTk3Mi0xMi0zMTo6MjAxMi0xMi0zMSJdLCBzY2FsZSA9IDEyLCBSZiA9IFJldHVybnNbIjE5NzItMTItMzE6OjIwMTItMTItMzEiXSxnZW9tZXRyaWMgPSBUUlVFKQ0KYGBgDQoNCiMjIyNUQklMTFRSIGRvZXNuJ3QgZXF1YWwgZXhwZWN0ZWQgbmVlZCB0byBjaGVjayBjYWxjcw0KDQojIyNtYW5hZ2VycyBleGFtcGxlDQoNCmRhdGEobWFuYWdlcnMpDQpUYmlsbE1vbnRobHlUUmV0dXJucyA8LSBtYW5hZ2Vyc1ssMTBdDQpSZXR1cm4uYW5udWFsaXplZChUYmlsbE1vbnRobHlUUmV0dXJuc1siMTk5OC8vMjAwMiJdKQ0KU2hhcnBlUmF0aW8uYW5udWFsaXplZChUYmlsbE1vbnRobHlUUmV0dXJuc1siMTk5OC8vMjAwMiJdLFRiaWxsTW9udGhseVRSZXR1cm5zWyIxOTk4Ly8yMDAyIl0pDQoNCg0KDQoNCg==</div>
 
 
 
