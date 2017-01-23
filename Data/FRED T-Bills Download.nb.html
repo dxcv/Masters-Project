@@ -252,9 +252,64 @@ write.zoo(TBillIndex, file=&quot;CSV files/TBILLS.csv&quot;, sep=&quot;,&quot;)<
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
+<div id="new-calculation-method" class="section level4">
+<h4>new calculation method</h4>
 <!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuVGJpbGwucmV0dXJuIDwtIFRiaWxsLnlpZWxkICNzZXQgdGhpcyB1cCB0byBob2xkIHByaWNlIHJldHVybnNcblRiaWxsLnJldHVyblsxLDFdPC0wXG5jb2xuYW1lcyhUYmlsbC5yZXR1cm4pPC1cIlByaWNlUmV0dXJuXCJcbmZvciAoaSBpbiAxOihOUk9XKFRiaWxsLnlpZWxkKS0xKSkge1xuICBUYmlsbC5yZXR1cm5baSsxLDFdPC1GaXhlZFJhdGVCb25kUHJpY2VCeVlpZWxkKHlpZWxkPVRiaWxsLnlpZWxkW2krMSwxXS8xMDAsaXNzdWVEYXRlPVN5cy5EYXRlKCksIFxuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBtYXR1cml0eURhdGU9IGFkdmFuY2UoXCJUQVJHRVRcIiwgU3lzLkRhdGUoKSwgMywgMiksXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJhdGVzPVRiaWxsLnlpZWxkW2ksMV0vMTAwLHBlcmlvZD0yKVsxXS8xMDAtMVxufVxuI1RvdGFsIHJldHVybiB3aWxsIGJlIHRoZSBwcmljZSByZXR1cm4gKyB0aGUgcHJldmlvdXMgbW9udGhzIHlpZWxkIGZvciBvbmUgbW9udGhcblRiaWxsLnRvdGFscmV0dXJuPC1UYmlsbC5yZXR1cm4rbGFnKFRiaWxsLnlpZWxkLGs9MSkvMTIvMTAwXG5UYmlsbC50b3RhbHJldHVyblsxLDFdPC0wXG5jb2xuYW1lcyhUYmlsbC50b3RhbHJldHVybik8LVwiVG90YWwgUmV0dXJuXCJcbiNOb3cgd2UgbmVlZCB0byBjcmVhdGUgYSBwcmljZSBpbmRleCB3aXRoIGJhc2UgMTAwXG5UQklMTFRSIDwtIGN1bXByb2QoMSArIFRiaWxsLnRvdGFscmV0dXJuKSAqIDEwMFxuY29sbmFtZXMoVEJJTExUUikgPC0gYyhcIlRCSUxMVFIuQ2xvc2VcIilcbmBgYCJ9 -->
+<pre class="r"><code>Tbill.return &lt;- Tbill.yield #set this up to hold price returns
+Tbill.return[1,1]&lt;-0
+colnames(Tbill.return)&lt;-&quot;PriceReturn&quot;
+for (i in 1:(NROW(Tbill.yield)-1)) {
+  Tbill.return[i+1,1]&lt;-FixedRateBondPriceByYield(yield=Tbill.yield[i+1,1]/100,issueDate=Sys.Date(), 
+                                                     maturityDate= advance(&quot;TARGET&quot;, Sys.Date(), 3, 2),
+                                                     rates=Tbill.yield[i,1]/100,period=2)[1]/100-1
+}
+#Total return will be the price return + the previous months yield for one month
+Tbill.totalreturn&lt;-Tbill.return+lag(Tbill.yield,k=1)/12/100
+Tbill.totalreturn[1,1]&lt;-0
+colnames(Tbill.totalreturn)&lt;-&quot;Total Return&quot;
+#Now we need to create a price index with base 100
+TBILLTR &lt;- cumprod(1 + Tbill.totalreturn) * 100
+colnames(TBILLTR) &lt;- c(&quot;TBILLTR.Close&quot;)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucm91bmQoc3RhdHMsMilcblxuYGBgIn0= -->
+<pre class="r"><code>round(stats,2)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICAgICAgICAgVEJJTExUUi5DbG9zZVxuUmV0dXJuICAgICAgICAgICAgICAgICAgNS40NVxuVm9sYXRpbGl0eSAgICAgICAgICAgICAgMS4wN1xuU2hhcnBlICAgICAgICAgICAgICAgICAgMC4wMFxuTWF4REQgICAgICAgICAgICAgICAgICAtMC4wNVxuSW5mbGF0aW9uIENBR1IgICAgICAgICAgNC4zMFxuIn0= -->
+<pre><code>               TBILLTR.Close
+Return                  5.45
+Volatility              1.07
+Sharpe                  0.00
+MaxDD                  -0.05
+Inflation CAGR          4.30</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuU2hhcnBlUmF0aW8uYW5udWFsaXplZChSZXR1cm5zLCBzY2FsZSA9IDEyLCBSZiA9IFJldHVybnNbXCIxOTcyLTEyLTMxOjoyMDEyLTEyLTMxXCJdLGdlb21ldHJpYyA9IFRSVUUpXG5cbmBgYCJ9 -->
+<pre class="r"><code>SharpeRatio.annualized(Returns, scale = 12, Rf = Returns[&quot;1972-12-31::2012-12-31&quot;],geometric = TRUE)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFRCSUxMVFIuQ2xvc2VcbkFubnVhbGl6ZWQgU2hhcnBlIFJhdGlvIChSZj01LjMlKSAgICAgICAgICAgICAwXG4ifQ== -->
+<pre><code>                                  TBILLTR.Close
+Annualized Sharpe Ratio (Rf=5.3%)             0</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="tbilltr-doesnt-equal-expected-need-to-check-calcs" class="section level4">
+<h4>TBILLTR doesn’t equal expected need to check calcs</h4>
+<!-- rnb-text-end -->
+</div>
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIkZSRUQgVC1CaWxscyBEb3dubG9hZCINCm91dHB1dDogaHRtbF9ub3RlYm9vaw0KLS0tDQoNClRoaXMgZmlsZSBkb3dubG9hZHMgdGhlIFQtQmlsbHMgcmF0ZQ0KDQpgYGB7cn0NCiNjbGVhbiB3b3Jrc3BhY2UgDQpybShsaXN0PWxzKClbISBscygpICVpbiUgYygib2JqZWN0MSIsIm9iamVjdDIiKV0pICNyZW1vdmUgYWxsIGJ1dCB0aGUgb2JqZWN0cyB5b3UgZGVmaW5lIGUuZy4gb2JqZWN0MSBhbmQgb2JqZWN0Mg0KYGBgDQoNCmBgYHtyLCBtZXNzYWdlPUZBTFNFfQ0KI2xvYWQgcmVxdWlyZWQgcGFja2FnZXMNCmxpYnJhcnkoUlF1YW50TGliKQ0KbGlicmFyeShxdWFudHN0cmF0KSANCmxpYnJhcnkocXVhbnRtb2QpDQpsaWJyYXJ5KFBlcmZvcm1hbmNlQW5hbHl0aWNzKQ0KbGlicmFyeSh0aWR5cXVhbnQpDQpsaWJyYXJ5KHRpZHl2ZXJzZSkNCmBgYA0KDQpgYGB7cn0NCiNEb3dubG9hZCBGUkVEIGRhdGEgZm9yIDEwWXIgVVMgQm9uZHMNCnN0YXJ0LmRhdGUgPC0gYXMuRGF0ZSgiMTk3Mi0xLTMxIikNCmVuZC5kYXRlIDwtIGFzLkRhdGUoIjIwMTYtMTItMzEiKQ0KDQpnZXRTeW1ib2xzKCJEVEIzIiwgc3JjPSJGUkVEIikgI2Rvd25sb2FkIGRhdGENCg0KVGJpbGwueWllbGQgPC0gdG8ubW9udGhseShEVEIzLGluZGV4QXQ9J2xhc3RvZicsZHJvcC50aW1lPVRSVUUpWyw0XSAjY29udmVydCB0byBtb250aGx5DQpUYmlsbC55aWVsZCA8LSBUYmlsbC55aWVsZFtwYXN0ZShzdGFydC5kYXRlLGVuZC5kYXRlLHNlcD0iLyIpXSAjc3Vic2V0IHRvIHJlcXVpcmVkIHBlcmlvZA0KDQpybShzdGFydC5kYXRlLGVuZC5kYXRlKQ0KYGBgDQoNCmBgYHtyfQ0KI3NhdmUgYXMgQ1NWIGZpbGVzDQp3cml0ZS56b28oVGJpbGwueWllbGQsIGZpbGU9IkNTViBmaWxlcy9UQmlsbFlpZWxkcy5jc3YiLCBzZXA9IiwiKQ0KYGBgDQoNCmBgYHtyfQ0KVFJDYWxjcyA8LSBUYmlsbC55aWVsZA0KVFJDYWxjcyRZaWVsZCA8LSBUYmlsbC55aWVsZC8xMi8xMDANClRSQ2FsY3MkSW5kZXggPC0gMTAwDQoNCmZvciAoaSBpbiAyOk5ST1coVFJDYWxjcyktMSl7DQogIFRSQ2FsY3MkSW5kZXhbaSsxLDFdIDwtICgxK1RSQ2FsY3MkWWllbGRbaV0pKlRSQ2FsY3MkSW5kZXhbaV0NCn0NCg0KVEJpbGxJbmRleCA8LSBUUkNhbGNzWywzXQ0KY29sbmFtZXMoVEJpbGxJbmRleCkgPC0gYygiVEJJTExTLkNsb3NlIikNCmBgYA0KDQpUbyBkbzoNCg0KKiBjaGVjayB0aGlzIGlzIHJpZ2h0IHdheSB0byBjYWxjdWxhdGUgVFIgaW5kZXggZm9yIFJmDQoqIENhbiB0aGlzIGJlIGRvbmUgYmV0dGVyIHdpdGggYSBtdXRhdGU/DQoNCmBgYHtyfQ0KI3NhdmUgYXMgQ1NWIGZpbGVzDQp3cml0ZS56b28oVEJpbGxJbmRleCwgZmlsZT0iQ1NWIGZpbGVzL1RCSUxMUy5jc3YiLCBzZXA9IiwiKQ0KYGBgDQoNCg0KDQo=</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIkZSRUQgVC1CaWxscyBEb3dubG9hZCINCm91dHB1dDogaHRtbF9ub3RlYm9vaw0KLS0tDQoNClRoaXMgZmlsZSBkb3dubG9hZHMgdGhlIFQtQmlsbHMgcmF0ZQ0KDQpgYGB7cn0NCiNjbGVhbiB3b3Jrc3BhY2UgDQpybShsaXN0PWxzKClbISBscygpICVpbiUgYygib2JqZWN0MSIsIm9iamVjdDIiKV0pICNyZW1vdmUgYWxsIGJ1dCB0aGUgb2JqZWN0cyB5b3UgZGVmaW5lIGUuZy4gb2JqZWN0MSBhbmQgb2JqZWN0Mg0KYGBgDQoNCmBgYHtyLCBtZXNzYWdlPUZBTFNFfQ0KI2xvYWQgcmVxdWlyZWQgcGFja2FnZXMNCmxpYnJhcnkoUlF1YW50TGliKQ0KbGlicmFyeShxdWFudHN0cmF0KSANCmxpYnJhcnkocXVhbnRtb2QpDQpsaWJyYXJ5KFBlcmZvcm1hbmNlQW5hbHl0aWNzKQ0KbGlicmFyeSh0aWR5cXVhbnQpDQpsaWJyYXJ5KHRpZHl2ZXJzZSkNCmBgYA0KDQpgYGB7cn0NCiNEb3dubG9hZCBGUkVEIGRhdGEgZm9yIDEwWXIgVVMgQm9uZHMNCnN0YXJ0LmRhdGUgPC0gYXMuRGF0ZSgiMTk3Mi0xLTMxIikNCmVuZC5kYXRlIDwtIGFzLkRhdGUoIjIwMTYtMTItMzEiKQ0KDQpnZXRTeW1ib2xzKCJEVEIzIiwgc3JjPSJGUkVEIikgI2Rvd25sb2FkIGRhdGENCg0KVGJpbGwueWllbGQgPC0gdG8ubW9udGhseShEVEIzLGluZGV4QXQ9J2xhc3RvZicsZHJvcC50aW1lPVRSVUUpWyw0XSAjY29udmVydCB0byBtb250aGx5DQpUYmlsbC55aWVsZCA8LSBUYmlsbC55aWVsZFtwYXN0ZShzdGFydC5kYXRlLGVuZC5kYXRlLHNlcD0iLyIpXSAjc3Vic2V0IHRvIHJlcXVpcmVkIHBlcmlvZA0KDQpybShzdGFydC5kYXRlLGVuZC5kYXRlKQ0KYGBgDQoNCmBgYHtyfQ0KI3NhdmUgYXMgQ1NWIGZpbGVzDQp3cml0ZS56b28oVGJpbGwueWllbGQsIGZpbGU9IkNTViBmaWxlcy9UQmlsbFlpZWxkcy5jc3YiLCBzZXA9IiwiKQ0KYGBgDQoNCmBgYHtyfQ0KVFJDYWxjcyA8LSBUYmlsbC55aWVsZA0KVFJDYWxjcyRZaWVsZCA8LSBUYmlsbC55aWVsZC8xMi8xMDANClRSQ2FsY3MkSW5kZXggPC0gMTAwDQoNCmZvciAoaSBpbiAyOk5ST1coVFJDYWxjcyktMSl7DQogIFRSQ2FsY3MkSW5kZXhbaSsxLDFdIDwtICgxK1RSQ2FsY3MkWWllbGRbaV0pKlRSQ2FsY3MkSW5kZXhbaV0NCn0NCg0KVEJpbGxJbmRleCA8LSBUUkNhbGNzWywzXQ0KY29sbmFtZXMoVEJpbGxJbmRleCkgPC0gYygiVEJJTExTLkNsb3NlIikNCmBgYA0KDQpUbyBkbzoNCg0KKiBjaGVjayB0aGlzIGlzIHJpZ2h0IHdheSB0byBjYWxjdWxhdGUgVFIgaW5kZXggZm9yIFJmDQoqIENhbiB0aGlzIGJlIGRvbmUgYmV0dGVyIHdpdGggYSBtdXRhdGU/DQoNCmBgYHtyfQ0KI3NhdmUgYXMgQ1NWIGZpbGVzDQp3cml0ZS56b28oVEJpbGxJbmRleCwgZmlsZT0iQ1NWIGZpbGVzL1RCSUxMUy5jc3YiLCBzZXA9IiwiKQ0KYGBgDQoNCiMjIyMgbmV3IGNhbGN1bGF0aW9uIG1ldGhvZA0KYGBge3J9DQpUYmlsbC5yZXR1cm4gPC0gVGJpbGwueWllbGQgI3NldCB0aGlzIHVwIHRvIGhvbGQgcHJpY2UgcmV0dXJucw0KVGJpbGwucmV0dXJuWzEsMV08LTANCmNvbG5hbWVzKFRiaWxsLnJldHVybik8LSJQcmljZVJldHVybiINCg0KZm9yIChpIGluIDE6KE5ST1coVGJpbGwueWllbGQpLTEpKSB7DQogIFRiaWxsLnJldHVybltpKzEsMV08LUZpeGVkUmF0ZUJvbmRQcmljZUJ5WWllbGQoeWllbGQ9VGJpbGwueWllbGRbaSsxLDFdLzEwMCxpc3N1ZURhdGU9U3lzLkRhdGUoKSwgDQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIG1hdHVyaXR5RGF0ZT0gYWR2YW5jZSgiVEFSR0VUIiwgU3lzLkRhdGUoKSwgMywgMiksDQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJhdGVzPVRiaWxsLnlpZWxkW2ksMV0vMTAwLHBlcmlvZD0yKVsxXS8xMDAtMQ0KfQ0KDQoNCiNUb3RhbCByZXR1cm4gd2lsbCBiZSB0aGUgcHJpY2UgcmV0dXJuICsgdGhlIHByZXZpb3VzIG1vbnRocyB5aWVsZCBmb3Igb25lIG1vbnRoDQpUYmlsbC50b3RhbHJldHVybjwtVGJpbGwucmV0dXJuK2xhZyhUYmlsbC55aWVsZCxrPTEpLzEyLzEwMA0KVGJpbGwudG90YWxyZXR1cm5bMSwxXTwtMA0KY29sbmFtZXMoVGJpbGwudG90YWxyZXR1cm4pPC0iVG90YWwgUmV0dXJuIg0KDQojTm93IHdlIG5lZWQgdG8gY3JlYXRlIGEgcHJpY2UgaW5kZXggd2l0aCBiYXNlIDEwMA0KVEJJTExUUiA8LSBjdW1wcm9kKDEgKyBUYmlsbC50b3RhbHJldHVybikgKiAxMDANCg0KY29sbmFtZXMoVEJJTExUUikgPC0gYygiVEJJTExUUi5DbG9zZSIpDQpgYGANCg0KYGBge3J9DQpBbGxBc3NldHMgPC0gVEJJTExUUlsiMTk3Mi0xMi0zMTo6MjAxNi0xMi0zMSJdDQoNCg0KQWxsQXNzZXRzLnJldCA8LSBSZXR1cm4uY2FsY3VsYXRlKEFsbEFzc2V0cylbLTEsXQ0KDQojc3Vic2V0IHRvIHJlcXVpcmVkIGRhdGVzDQpSZXR1cm5zIDwtIEFsbEFzc2V0cy5yZXRbIjE5NzItMTItMzE6OjIwMTItMTItMzEiXQ0Kc3RhdHMgPC0gcmJpbmQoUmV0dXJuLmFubnVhbGl6ZWQoUmV0dXJucyxzY2FsZSA9IDEyKSoxMDAsIA0KICAgICAgICAgICAgICAgU3RkRGV2LmFubnVhbGl6ZWQoUmV0dXJucyxzY2FsZSA9IDEyKSoxMDAsIA0KICAgICAgICAgICAgICAgU2hhcnBlUmF0aW8uYW5udWFsaXplZChSZXR1cm5zLFJmID0gUmV0dXJucyksDQogICAgICAgICAgICAgICBtYXhEcmF3ZG93bihSZXR1cm5zLHNjYWxlID0gMTIsaW52ZXJ0ID0gRkFMU0UpKjEwMCwNCiAgICAgICAgICAgICAgIGMoNC4zMCkpDQoNCnJvd25hbWVzKHN0YXRzKSA8LSBjKCJSZXR1cm4iLCJWb2xhdGlsaXR5IiwiU2hhcnBlIiwiTWF4REQiLCJJbmZsYXRpb24gQ0FHUiIpDQoNCnJvdW5kKHN0YXRzLDIpDQpgYGANCg0KDQpgYGB7cn0NClJldHVybi5hbm51YWxpemVkKFJldHVybnMsIHNjYWxlID0gMTIpDQpSZXR1cm4uYW5udWFsaXplZChSZXR1cm5zLCBnZW9tZXRyaWMgPSBGQUxTRSkNClNoYXJwZVJhdGlvLmFubnVhbGl6ZWQoUmV0dXJucywgc2NhbGUgPSAxMiwgUmYgPSBSZXR1cm5zWyIxOTcyLTEyLTMxOjoyMDEyLTEyLTMxIl0sZ2VvbWV0cmljID0gVFJVRSkNCmBgYA0KDQojIyMjVEJJTExUUiBkb2Vzbid0IGVxdWFsIGV4cGVjdGVkIG5lZWQgdG8gY2hlY2sgY2FsY3MNCg==</div>
 
 
 
