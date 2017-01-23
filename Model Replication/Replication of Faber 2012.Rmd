@@ -31,12 +31,13 @@ The data provider for Fabers research is Global Financial Data -  unfortunately 
 
 Each asset's class price series has been saved as a CSV. The packages used for performance analysis and backtesting require the data to be xts objects which are created by the following code.
 
-```{r}
+```{r, message=FALSE}
 #Import saved pricing data csv files as xts
 rm(list = ls())
 
-library(tidyverse)
-library(tidyquant)
+library(PerformanceAnalytics)
+#library(tidyverse) can't use tidyverse - it changes R base code and breaks return.calculate
+#library(tidyquant)
 library(quantstrat)
 symbols <- c("TBILLS","SP500","EAFE","US10YR","GSCI","NAREIT")
 
@@ -171,7 +172,7 @@ Notes:
 To demostrate the logic and characteristics of the timing system, Faber tests the S&P back to 1901
 
 ```{r}
-
+library(dplyr)
 getSymbols("TBillYields",
            src = "csv",
            dir="../Data/CSV files",
