@@ -49,6 +49,10 @@ for (i in 2:NROW(TRCalcs)-1){
 
 TBillIndex <- TRCalcs[,3]
 colnames(TBillIndex) <- c("TBILLS.Close")
+
+Returns <- Return.calculate(TBILLTR["1972-12-31::2016-12-31"])[-1,]
+Returns <- Returns["1972-12-31::2012-12-31"]
+Return.annualized(Returns,scale = 12)*100
 ```
 
 To do:
@@ -63,16 +67,17 @@ write.zoo(TBillIndex, file="CSV files/TBILLS.csv", sep=",")
 
 #### new calculation method
 ```{r}
+getSymbols("DTB3", src="FRED") #download data
+Tbill.yield <- to.monthly(DTB3,indexAt='lastof',drop.time=TRUE)[,4] #convert to monthly
 Tbill.return <- Tbill.yield #set this up to hold price returns
 Tbill.return[1,1]<-0
 colnames(Tbill.return)<-"PriceReturn"
 
 for (i in 1:(NROW(Tbill.yield)-1)) {
-  Tbill.return[i+1,1]<-FixedRateBondPriceByYield(yield=Tbill.yield[i+1,1]/100,issueDate=Sys.Date(), 
+  Tbill.return[i+1,1]<-FixedRateBondPriceByYield(yield=Tbill.yield[i+1,1]/100,issueDate=Sys.Date(),
                                                      maturityDate= advance("TARGET", Sys.Date(), 3, 2),
                                                      rates=Tbill.yield[i,1]/100,period=2)[1]/100-1
 }
-
 
 #Total return will be the price return + the previous months yield for one month
 Tbill.totalreturn<-Tbill.return+lag(Tbill.yield,k=1)/12/100
@@ -81,14 +86,15 @@ colnames(Tbill.totalreturn)<-"Total Return"
 
 #Now we need to create a price index with base 100
 TBILLTR <- cumprod(1 + Tbill.totalreturn) * 100
-
 colnames(TBILLTR) <- c("TBILLTR.Close")
+
+Returns <- Return.calculate(TBILLTR["1972-12-31::2016-12-31"])[-1,]
+Returns <- Returns["1972-12-31::2012-12-31"]
+Return.annualized(Returns,scale = 12)*100
 ```
 
 ```{r}
 AllAssets <- TBILLTR["1972-12-31::2016-12-31"]
-<<<<<<< HEAD
-
 
 AllAssets.ret <- Return.calculate(AllAssets)[-1,]
 
@@ -123,9 +129,6 @@ TbillMonthlyTReturns <- managers[,10]
 Return.annualized(TbillMonthlyTReturns["1998//2002"])
 SharpeRatio.annualized(TbillMonthlyTReturns["1998//2002"],TbillMonthlyTReturns["1998//2002"])
 
-
-=======
->>>>>>> 7c842f9a6fd8cfad73bb585e2a8da65c6b8c107a
 
 
 AllAssets.ret <- Return.calculate(AllAssets)[-1,]
