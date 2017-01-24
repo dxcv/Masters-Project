@@ -87,6 +87,7 @@ colnames(TBILLTR) <- c("TBILLTR.Close")
 
 ```{r}
 AllAssets <- TBILLTR["1972-12-31::2016-12-31"]
+<<<<<<< HEAD
 
 
 AllAssets.ret <- Return.calculate(AllAssets)[-1,]
@@ -123,5 +124,30 @@ Return.annualized(TbillMonthlyTReturns["1998//2002"])
 SharpeRatio.annualized(TbillMonthlyTReturns["1998//2002"],TbillMonthlyTReturns["1998//2002"])
 
 
+=======
+>>>>>>> 7c842f9a6fd8cfad73bb585e2a8da65c6b8c107a
 
 
+AllAssets.ret <- Return.calculate(AllAssets)[-1,]
+
+#subset to required dates
+Returns <- AllAssets.ret["1972-12-31::2012-12-31"]
+stats <- rbind(Return.annualized(Returns,scale = 12)*100, 
+               StdDev.annualized(Returns,scale = 12)*100, 
+               SharpeRatio.annualized(Returns,Rf = Returns),
+               maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
+               c(4.30))
+
+rownames(stats) <- c("Return","Volatility","Sharpe","MaxDD","Inflation CAGR")
+
+round(stats,2)
+```
+
+
+```{r}
+Return.annualized(Returns, scale = 12)
+Return.annualized(Returns, geometric = FALSE)
+SharpeRatio.annualized(Returns, scale = 12, Rf = Returns["1972-12-31::2012-12-31"],geometric = TRUE)
+```
+
+####TBILLTR doesn't equal expected need to check calcs

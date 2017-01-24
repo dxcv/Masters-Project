@@ -1,0 +1,70 @@
+---
+title: "CPI Download"
+output: html_notebook
+---
+
+This R file downloads the CPI Index from the US Bureau of Labor Statistics and saves as a CSV for use in other R files.
+
+Source: U.S. Bureau of Labor Statistics, Consumer Price Index for All Urban Consumers: All Items [CPIAUCSL], retrieved from FRED, Federal Reserve Bank of St. Louis; https://fred.stlouisfed.org/series/CPIAUCSL, January 23, 2017.
+
+#### Downloading the Data
+
+```{r, message=FALSE}
+#clean workspace 
+rm(list=ls()) #remove all
+
+#load required packages
+library(quantmod)
+library(PerformanceAnalytics)
+
+#Set time frame
+start.date <- as.Date("1972-1-31")
+end.date <- as.Date("2016-12-31")
+
+#Download Data from FRED
+getSymbols("CPIAUCSL", src="FRED")
+
+#Changes dates to last day of month
+CPI <- to.monthly(CPIAUCSL,indexAt='lastof',drop.time=TRUE)[,4] 
+
+#change col name
+colnames(CPI) <- "CPI.Close"
+
+#Subset to required time frame
+CPI <- CPI[paste(start.date,end.date,sep="/")] 
+
+rm(CPIAUCSL,start.date,end.date)
+```
+
+#### Checking the Data 
+
+Lets creat stats and plot the data to make sure it looks complete, is in the right time frame and can be validated against the the original charts in Faber's paper.
+
+```{r}
+mycharttheme <- chart_theme()
+mycharttheme$col$line.col <- "blue"
+
+chart_Series(CPI,
+             name="Consumer Price Index for All Urban Consumers: All Items", 
+             theme = mycharttheme
+)
+
+```
+
+```{r}
+CPI.ret <- Return.calculate(CPI)[-1,]
+
+#subset to required dates to match Faber's 4.30% for Inflation CAGR
+Returns <- CPI.ret["1972-12-31::2012-12-31"]
+
+#Inflation CAGR (4.30% expected)
+round(Return.annualized(Returns,scale = 12,geometric = TRUE)*100,2)
+```
+
+#### Save as CSV file for later use
+
+```{r}
+#save as CSV files
+write.zoo(CPI, file="CSV files/CPI.csv", sep=",")
+```
+
