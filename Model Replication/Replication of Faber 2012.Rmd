@@ -39,7 +39,7 @@ library(PerformanceAnalytics)
 #library(tidyverse) can't use tidyverse - it changes R base code and breaks return.calculate
 #library(tidyquant)
 library(quantstrat)
-symbols <- c("TBILLS","SP500","EAFE","US10YR","GSCI","NAREIT")
+symbols <- c("TBILLS","SP500","EAFE","US10YR","GSCI","NAREIT","CPI")
 
 getSymbols(symbols,
            src = "csv",
@@ -58,7 +58,8 @@ AllAssets <- cbind.xts(Cl(TBILLS),
                        Cl(EAFE),
                        Cl(US10YR),
                        Cl(GSCI),
-                       Cl(NAREIT))                       
+                       Cl(NAREIT),
+                       Cl(CPI))                       
 
 AllAssets <- AllAssets["1972-12-31::2016-12-31"]
 colnames(AllAssets) <- symbols
@@ -75,7 +76,7 @@ chart.TimeSeries(AllAssets.cumret["1972-12-31::2012-12-31"],
                  date.format = "%Y",
                  major.ticks = "years",
                  legend.loc = "bottomright",
-                 colorset = 1:12, #bluefocus, #create own colorset at some point
+                 colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue"), #bluefocus, #create own colorset at some point
                  minor.ticks =FALSE)
 ```
 
@@ -169,16 +170,16 @@ Notes:
 
 ####S&P 500 from 1901 - 2012
 
-To demostrate the logic and characteristics of the timing system, Faber tests the S&P back to 1901
+To demostrate the logic and characteristics of the timing system, Faber tests the S&P back to 1901. As i can't get data i will use the INDU (dow jones) as a substitute for now. Note not total returns. Now using shillers data...
 
 ```{r}
 library(dplyr)
-getSymbols("TBillYields",
+getSymbols(c("SP500LT","TBillYields"),
            src = "csv",
            dir="../Data/CSV files",
            col.names=c("Close"))
 
-AllAssets <- cbind.xts(Cl(SP500),
+AllAssets <- cbind.xts(Cl(INDU),
                        Cl(TBILLYIELDS))#,Cl(US10YR), Cl(GSCI),Cl(NAREIT))    
 
 #create dataframe - tidyverse not compatible with xts?
@@ -186,10 +187,10 @@ AllAssets.df <- data.frame(date=index(AllAssets), coredata(AllAssets)) #, row.na
 
 #mutate new columns
 AllAssets.df  <- mutate(AllAssets.df, 
-  "10mSMA" = rollmean(SP500.Close,10,fill = 0,align = "right"),
-  "Asset.ret" = c(0,diff(SP500.Close)/lag(SP500.Close)[-1]),
+  "10mSMA" = rollmean(INDU.Close,10,fill = 0,align = "right"),
+  "Asset.ret" = c(0,diff(INDU.Close)/lag(SP500.Close)[-1]),
   "Rf.ret" = lag((TBILLYIELDS.Close/100)/12),
-  "signal" = lag(ifelse(SP500.Close>`10mSMA`,1,0)),
+  "signal" = lag(ifelse(INDU.Close>`10mSMA`,1,0)),
   "Timing.ret" = ifelse(signal == 1,Asset.ret,Rf.ret) 
 )
 
@@ -201,6 +202,7 @@ To do:
 * check lag correct
 * run over data from 1900 / other assets
 * chart with periods highlighted (similar to position chart)
+* work out how to have dplyr work with other packages
 
 ####Stats
 
@@ -214,7 +216,7 @@ stats <- rbind(Return.annualized(Returns,scale = 12)*100,
                maxDrawdown(Returns,scale = 12)*100,
                c(nrow(subset(Returns, Returns$Asset.ret >= 0))/nrow(Returns),nrow(subset(Returns, Returns$Timing.ret >= 0))/nrow(Returns))*100)
 
-colnames(stats) <- c("S&P 500","TIMING")
+colnames(stats) <- c("INDU","TIMING")
 rownames(stats) <- c("Return","Volatility","Sharpe","MaxDD","% Positive Months")
 
 round(stats,2)
@@ -227,22 +229,25 @@ To do:
 * format percentages
 * add $100 becomes and inflation CAGR
 * loop for other asset classes
+* add for another asset class
 
 ####Charts 
 
 ```{r}
 charts.PerformanceSummary(Returns,
-                          main = "S&P 500 Total Returns vs Timing Total Returns (1973-2012)",
+                          main = "Dow Jones Returns vs Timing Total Returns (1973-2012)",
                           date.format = "%Y",
                           colorset = c(4,2),
                           ylog = FALSE,
                           minor.ticks =FALSE)
 ```
 
+to do: add in position chart.
+
 
 ```{r}
 charts.RollingPerformance(Returns,
-                          main = "S&P 500 Total Returns vs Timing Total Returns (1973-2012)",
+                          main = "Dow Jones Returns vs Timing Total Returns (1973-2012)",
                           date.format = "%Y",
                           colorset = c(4,2),
                           ylog = FALSE,
