@@ -60,19 +60,20 @@ rm(symbols,start.date,end.date)
 ```{r}
 #convert Bloomberg data into individual xts files 
 DomesticEquity <- xts(BloombergData$`JALSHTR INDEX`[,-1],BloombergData$`JALSHTR INDEX`[,1])
-DomesticEquity <- to.daily(DomesticEquity,drop.time=TRUE)[,4]
+DomesticEquity <- to.monthly(DomesticEquity,index = "lastof", drop.time=TRUE)[,4]
+#DomesticEquity <- to.daily(DomesticEquity,drop.time=TRUE)[,4]
 GlobalEquity <- xts(BloombergData$`GDDUWI INDEX`[,-1],BloombergData$`GDDUWI INDEX`[,1])
-GlobalEquity <- to.daily(GlobalEquity,drop.time=TRUE)[,4]
+GlobalEquity <- to.monthly(GlobalEquity,index = "lastof", drop.time=TRUE)[,4]
 FixedIncome <- xts(BloombergData$`SYG5TR INDEX`[,-1],BloombergData$`SYG5TR INDEX`[,1])
-FixedIncome <- to.daily(FixedIncome,drop.time=TRUE)[,4]
+FixedIncome <- to.monthly(FixedIncome,index = "lastof", drop.time=TRUE)[,4]
 Commodities <- xts(BloombergData$`SPGSCITR INDEX`[,-1],BloombergData$`SPGSCITR INDEX`[,1])
-Commodities <- to.daily(Commodities,drop.time=TRUE)[,4]
+Commodities <- to.monthly(Commodities,index = "lastof", drop.time=TRUE)[,4]
 RealEstate <- xts(BloombergData$`TJSAPYZ INDEX`[,-1],BloombergData$`TJSAPYZ INDEX`[,1])
-RealEstate <- to.daily(RealEstate,drop.time=TRUE)[,4] #convert to monthly
+RealEstate <- to.monthly(RealEstate,index = "lastof", drop.time=TRUE)[,4] #convert to monthly
 CPI <- xts(BloombergData$`SACPI INDEX`[,-1],BloombergData$`SACPI INDEX`[,1])
-CPI <- to.daily(CPI,drop.time=TRUE)[,4]
+CPI <- to.monthly(CPI,index = "lastof", drop.time=TRUE)[,4]
 RiskFree <- xts(BloombergData$`STEFI INDEX`[,-1],BloombergData$`STEFI INDEX`[,1])
-RiskFree <- to.daily(RiskFree,drop.time=TRUE)[,4]
+RiskFree <- to.monthly(RiskFree,index = "lastof", drop.time=TRUE)[,4]
 rm(BloombergData)
 ```
 
