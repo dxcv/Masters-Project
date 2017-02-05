@@ -1,0 +1,23 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(SIT)
+# load 3-Month Treasury Bill from FRED (BIL)
+filename = 'data/TB3M.Rdata'
+if(!file.exists(filename)) {
+	TB3M = quantmod::getSymbols('DTB3', src='FRED', auto.assign = FALSE)
+	save(TB3M, file=filename)
+}
+load(file=filename)
+TB3M[] = ifna.prev(TB3M)
+#compute.raw.annual.factor(TB3M)
+
+test = make.stock.xts(processTBill(TB3M, timetomaturity = 1/4, 261))
+
+make.stock.xts(TB3M)
+processTBill(TB3M, timetomaturity = 1/4, 365)
+```
+
