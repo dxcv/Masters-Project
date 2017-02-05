@@ -33,7 +33,8 @@ AllAssets <- cbind.xts(Cl(RISKFREE),
                        Cl(REALESTATE),
                        Cl(CPI))                       
 
-AllAssets <- AllAssets["2002-12-31::2016-12-31"]
+AllAssets <- AllAssets["2003-07-31::2016-12-31"]
+
 colnames(AllAssets) <- symbols
 
 AllAssets.ret <- Return.calculate(AllAssets)[-1,]
@@ -44,11 +45,16 @@ chart.TimeSeries(AllAssets.cumret["1972-12-31::2012-12-31"],
                  #lty = "2",
                  ylab = "",
                  ylog = TRUE,
-                 ylim = c(40,6000),
+                 ylim = c(80,1000),
                  date.format = "%Y",
                  major.ticks = "years",
-                 legend.loc = "bottomright",
+                 legend.loc = "topleft",
                  colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue"), #bluefocus, #create own colorset at some point
                  minor.ticks =FALSE)
 ```
-how to calculate returns with NA
+to do:
+
+* how to calculate dailyreturns with NA
+* check returns make sense - effect of zar?
+* compare to US / JPY
+* create RF to get 2002 in
