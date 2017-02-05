@@ -172,19 +172,31 @@ $(document).ready(function () {
 
 
 <!-- rnb-text-begin -->
-<p>SA assets Daily drawdowns Relative performance / rolling perofrmance / alpha 10 worst periods / 10 best periods</p>
+<p>To do: SA assets Daily drawdowns Relative performance / rolling perofrmance / alpha 10 worst periods / 10 best periods</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGxvdChjYXJzKVxuYGBgIn0= -->
-<pre class="r"><code>plot(cars)</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0xvYWQgcmVxdWlyZWQgcGFja2FnZXNcbmxpYnJhcnkoUGVyZm9ybWFuY2VBbmFseXRpY3MpXG5saWJyYXJ5KHF1YW50c3RyYXQpXG4jU2V0IFN5bWJvbHNcbnN5bWJvbHMgPC0gYyhcIkRvbWVzdGljRXF1aXR5XCIsXCJHbG9iYWxFcXVpdHlcIixcIkZpeGVkSW5jb21lXCIsXCJDb21tb2RpdGllc1wiLFwiUmVhbEVzdGF0ZVwiLFwiUmlza0ZyZWVcIixcIkNQSVwiKVxuI0ltcG9ydCBzYXZlZCBwcmljaW5nIGRhdGEgY3N2IGZpbGVzIGFzIHh0c1xuZ2V0U3ltYm9scyhzeW1ib2xzLFxuICAgICAgICAgICBzcmMgPSBcImNzdlwiLFxuICAgICAgICAgICBkaXI9XCIuLi9EYXRhL0NTViBmaWxlcy9TQS9cIixcbiAgICAgICAgICAgY29sLm5hbWVzPWMoXCJDbG9zZVwiKSlcbmBgYCJ9 -->
+<pre class="r"><code>#Load required packages
+library(PerformanceAnalytics)
+library(quantstrat)
+#Set Symbols
+symbols &lt;- c(&quot;DomesticEquity&quot;,&quot;GlobalEquity&quot;,&quot;FixedIncome&quot;,&quot;Commodities&quot;,&quot;RealEstate&quot;,&quot;RiskFree&quot;,&quot;CPI&quot;)
+#Import saved pricing data csv files as xts
+getSymbols(symbols,
+           src = &quot;csv&quot;,
+           dir=&quot;../Data/CSV files/SA/&quot;,
+           col.names=c(&quot;Close&quot;))</code></pre>
 <!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5maWxlICBSaXNrRnJlZS5jc3YgIGRvZXMgbm90IGV4aXN0ICBpbiAgLi4vRGF0YS9DU1YgZmlsZXMvU0EvIC4uLi5za2lwcGluZ1xuWzFdIFwiRE9NRVNUSUNFUVVJVFlcIiBcIkdMT0JBTEVRVUlUWVwiICAgXCJGSVhFRElOQ09NRVwiICAgIFwiQ09NTU9ESVRJRVNcIiAgICBcIlJFQUxFU1RBVEVcIiAgICAgXCJSaXNrRnJlZVwiICAgICAgIFwiQ1BJXCIgICAgICAgICAgIFxuIn0= -->
+<pre><code>
+file  RiskFree.csv  does not exist  in  ../Data/CSV files/SA/ ....skipping
+[1] &quot;DOMESTICEQUITY&quot; &quot;GLOBALEQUITY&quot;   &quot;FIXEDINCOME&quot;    &quot;COMMODITIES&quot;    &quot;REALESTATE&quot;     &quot;RiskFree&quot;       &quot;CPI&quot;           </code></pre>
+<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
-<p>Add a new chunk by clicking the <em>Insert Chunk</em> button on the toolbar or by pressing <em>Ctrl+Alt+I</em>.</p>
-<p>When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the <em>Preview</em> button or press <em>Ctrl+Shift+K</em> to preview the HTML file).</p>
 <!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIlNBIEFzc2V0cyINCm91dHB1dDogaHRtbF9ub3RlYm9vaw0KLS0tDQoNCg0KU0EgYXNzZXRzDQpEYWlseSBkcmF3ZG93bnMNClJlbGF0aXZlIHBlcmZvcm1hbmNlIC8gcm9sbGluZyBwZXJvZnJtYW5jZSAvIGFscGhhDQoxMCB3b3JzdCBwZXJpb2RzIC8gMTAgYmVzdCBwZXJpb2RzIA0KDQpgYGB7cn0NCnBsb3QoY2FycykNCmBgYA0KDQpBZGQgYSBuZXcgY2h1bmsgYnkgY2xpY2tpbmcgdGhlICpJbnNlcnQgQ2h1bmsqIGJ1dHRvbiBvbiB0aGUgdG9vbGJhciBvciBieSBwcmVzc2luZyAqQ3RybCtBbHQrSSouDQoNCldoZW4geW91IHNhdmUgdGhlIG5vdGVib29rLCBhbiBIVE1MIGZpbGUgY29udGFpbmluZyB0aGUgY29kZSBhbmQgb3V0cHV0IHdpbGwgYmUgc2F2ZWQgYWxvbmdzaWRlIGl0IChjbGljayB0aGUgKlByZXZpZXcqIGJ1dHRvbiBvciBwcmVzcyAqQ3RybCtTaGlmdCtLKiB0byBwcmV2aWV3IHRoZSBIVE1MIGZpbGUpLg0K</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIlNBIEFzc2V0cyINCm91dHB1dDogaHRtbF9ub3RlYm9vaw0KLS0tDQoNClRvIGRvOg0KU0EgYXNzZXRzDQpEYWlseSBkcmF3ZG93bnMNClJlbGF0aXZlIHBlcmZvcm1hbmNlIC8gcm9sbGluZyBwZXJvZnJtYW5jZSAvIGFscGhhDQoxMCB3b3JzdCBwZXJpb2RzIC8gMTAgYmVzdCBwZXJpb2RzIA0KDQpgYGB7ciwgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCiNMb2FkIHJlcXVpcmVkIHBhY2thZ2VzDQpsaWJyYXJ5KFBlcmZvcm1hbmNlQW5hbHl0aWNzKQ0KbGlicmFyeShxdWFudHN0cmF0KQ0KDQojU2V0IFN5bWJvbHMNCnN5bWJvbHMgPC0gYygiRG9tZXN0aWNFcXVpdHkiLCJHbG9iYWxFcXVpdHkiLCJGaXhlZEluY29tZSIsIkNvbW1vZGl0aWVzIiwiUmVhbEVzdGF0ZSIsIlJpc2tGcmVlIiwiQ1BJIikNCg0KI0ltcG9ydCBzYXZlZCBwcmljaW5nIGRhdGEgY3N2IGZpbGVzIGFzIHh0cw0KZ2V0U3ltYm9scyhzeW1ib2xzLA0KICAgICAgICAgICBzcmMgPSAiY3N2IiwNCiAgICAgICAgICAgZGlyPSIuLi9EYXRhL0NTViBmaWxlcy9TQS8iLA0KICAgICAgICAgICBjb2wubmFtZXM9YygiQ2xvc2UiKSkNCmBgYA0KDQo=</div>
 
 
 
