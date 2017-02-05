@@ -1,0 +1,89 @@
+---
+title: "Download of SA Assets"
+output: html_notebook
+---
+
+###Downloading SA Data
+
+This file downloads Bloomberg pricing data for the following asset classes a South African investor would look at: 
+
+* Domestic Equity (South Africa JSE All Share TR Index)
+* Global Equity (MSCI Daily TR Gross World) 
+* Commodities
+* 
+* 
+
+All indices are total return indices provided by Bloomberg in ZAR.
+
+Latest data is from 2002?
+
+```{r, message=FALSE}
+#load required packages
+library(Rblpapi)
+library(quantmod)
+
+#connect to bloomberg
+blpConnect()
+```
+
+```{r}
+#Download bloomberg data for indices Faber used
+symbols <- c("JALSHTR INDEX", #SA Domestic Equity
+             "GDDUWI INDEX", #Global Equity
+             "SYG5TR INDEX", #Fixed Income
+             "SPGSCITR INDEX", #Commodities
+             "TJSAPYZ INDEX", #Real Estate
+             "STEFI INDEX", #Risk Free
+             "SACPI INDEX" #CPI
+             )
+
+#Set time period
+start.date <- as.Date("1999-12-31")
+end.date <- as.Date("2016-12-31")
+```
+
+```{r}
+#Set currency to ZAR
+opt <- c("currency"="ZAR")
+
+#Download data from Bloomberg
+BloombergData <- bdh(securities = symbols, 
+            c("PX_LAST"), 
+            start.date= start.date,
+            end.date = end.date,
+            options=opt
+            )
+
+rm(symbols,start.date,end.date)
+```
+
+```{r}
+#convert Bloomberg data into individual xts files 
+DomesticEquity <- xts(BloombergData$`JALSHTR INDEX`[,-1],BloombergData$`JALSHTR INDEX`[,1])
+DomesticEquity <- to.daily(DomesticEquity,drop.time=TRUE)[,4]
+GlobalEquity <- xts(BloombergData$`GDDUWI INDEX`[,-1],BloombergData$`GDDUWI INDEX`[,1])
+GlobalEquity <- to.daily(GlobalEquity,drop.time=TRUE)[,4]
+FixedIncome <- xts(BloombergData$`SYG5TR INDEX`[,-1],BloombergData$`SYG5TR INDEX`[,1])
+FixedIncome <- to.daily(FixedIncome,drop.time=TRUE)[,4]
+Commodities <- xts(BloombergData$`SPGSCITR INDEX`[,-1],BloombergData$`SPGSCITR INDEX`[,1])
+Commodities <- to.daily(Commodities,drop.time=TRUE)[,4]
+RealEstate <- xts(BloombergData$`TJSAPYZ INDEX`[,-1],BloombergData$`TJSAPYZ INDEX`[,1])
+RealEstate <- to.daily(RealEstate,drop.time=TRUE)[,4] #convert to monthly
+CPI <- xts(BloombergData$`SACPI INDEX`[,-1],BloombergData$`SACPI INDEX`[,1])
+CPI <- to.daily(CPI,drop.time=TRUE)[,4]
+RiskFree <- xts(BloombergData$`STEFI INDEX`[,-1],BloombergData$`STEFI INDEX`[,1])
+RiskFree <- to.daily(RiskFree,drop.time=TRUE)[,4]
+rm(BloombergData)
+```
+
+```{r}
+#save as CSV files for use in other files - change to loop at some point
+write.zoo(DomesticEquity, file="CSV Files/SA/DomesticEquity.csv", sep=",")
+write.zoo(GlobalEquity, file="CSV Files/SA/GlobalEquity.csv", sep=",")
+write.zoo(FixedIncome, file="CSV Files/SA/FixedIncome.csv", sep=",")
+write.zoo(Commodities, file="CSV Files/SA/Commodities.csv", sep=",")
+write.zoo(RealEstate, file="CSV Files/SA/RealEstate.csv", sep=",")
+write.zoo(CPI, file="CSV Files/SA/CPI.csv", sep=",")
+write.zoo(RiskFree, file="CSV Files/SA/RiskFree.csv", sep=",")
+```
+
