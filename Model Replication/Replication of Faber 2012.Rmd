@@ -94,20 +94,19 @@ To do:
 Returns <- AllAssets.ret["1972-12-31::2012-12-31"]
 stats <- rbind(Return.annualized(Returns,scale = 12)*100, 
                StdDev.annualized(Returns,scale = 12)*100, 
-               SharpeRatio.annualized(Returns,Rf = 0.0541/12),
+               SharpeRatio.annualized(Returns,Rf = AllAssets.ret$TBILLS),
                maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
-               c(4.30))
+               c(100*Return.annualized(Returns$CPI,scale = 12)))
 
 colnames(stats) <- symbols
 rownames(stats) <- c("Return","Volatility","Sharpe (5.41%)","MaxDD","Inflation CAGR")
-
-round(stats,2)
-
+round(stats[,-7],2)
 ```
 
 To do:
 
 * confirm correct rate for Rf (Faber uses 5.41%) and that sharpe ratio is calculating correctly. TBILL should be zero!
+* note that sharpe 5.41% is actually 4.8% according to the R model. Diff between monthly and annual?
 * format into percentages
 * is table needed showing differences to original research?
 * source actual inflation
@@ -172,25 +171,25 @@ Notes:
 
 To demostrate the logic and characteristics of the timing system, Faber tests the S&P back to 1901. As i can't get data i will use the INDU (dow jones) as a substitute for now. Note not total returns. Now using shillers data...
 
-```{r}
+```{r, warning=FALSE}
 library(dplyr)
-getSymbols(c("SP500LT","TBillYields"),
+getSymbols(c("SP500","TBillYields"),
            src = "csv",
            dir="../Data/CSV files",
            col.names=c("Close"))
 
-AllAssets <- cbind.xts(Cl(INDU),
-                       Cl(TBILLYIELDS))#,Cl(US10YR), Cl(GSCI),Cl(NAREIT))    
+AllAssets <- cbind.xts(Cl(SP500),
+                       Cl(TBILLYIELDS))    
 
 #create dataframe - tidyverse not compatible with xts?
 AllAssets.df <- data.frame(date=index(AllAssets), coredata(AllAssets)) #, row.names = index(AllAssets))
 
 #mutate new columns
 AllAssets.df  <- mutate(AllAssets.df, 
-  "10mSMA" = rollmean(INDU.Close,10,fill = 0,align = "right"),
-  "Asset.ret" = c(0,diff(INDU.Close)/lag(SP500.Close)[-1]),
+  "10mSMA" = rollmean(SP500.Close,10,fill = 0,align = "right"),
+  "Asset.ret" = c(0,diff(SP500.Close)/lag(SP500.Close)[-1]),
   "Rf.ret" = lag((TBILLYIELDS.Close/100)/12),
-  "signal" = lag(ifelse(INDU.Close>`10mSMA`,1,0)),
+  "signal" = lag(ifelse(SP500.Close>`10mSMA`,1,0)),
   "Timing.ret" = ifelse(signal == 1,Asset.ret,Rf.ret) 
 )
 
@@ -203,6 +202,7 @@ To do:
 * run over data from 1900 / other assets
 * chart with periods highlighted (similar to position chart)
 * work out how to have dplyr work with other packages
+need rf from 1900 as well
 
 ####Stats
 
@@ -213,10 +213,10 @@ Returns <- cbind.xts(AllAssets$Asset.ret, AllAssets$Timing.ret)["1972-12-31::201
 stats <- rbind(Return.annualized(Returns,scale = 12)*100, 
                StdDev.annualized(Returns,scale = 12)*100, 
                SharpeRatio.annualized(Returns,Rf = 0.0541/12),
-               maxDrawdown(Returns,scale = 12)*100,
+               maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
                c(nrow(subset(Returns, Returns$Asset.ret >= 0))/nrow(Returns),nrow(subset(Returns, Returns$Timing.ret >= 0))/nrow(Returns))*100)
 
-colnames(stats) <- c("INDU","TIMING")
+colnames(stats) <- c("SP500","TIMING")
 rownames(stats) <- c("Return","Volatility","Sharpe","MaxDD","% Positive Months")
 
 round(stats,2)
@@ -230,15 +230,16 @@ To do:
 * add $100 becomes and inflation CAGR
 * loop for other asset classes
 * add for another asset class
+* confirm Rf / charpe sharpe to feed off Rf
 
 ####Charts 
 
 ```{r}
 charts.PerformanceSummary(Returns,
-                          main = "Dow Jones Returns vs Timing Total Returns (1973-2012)",
+                          main = "SP500 Total Returns vs Timing Total Returns (1973-2012)",
                           date.format = "%Y",
                           colorset = c(4,2),
-                          ylog = FALSE,
+                          ylog = TRUE,
                           minor.ticks =FALSE)
 ```
 
@@ -247,7 +248,7 @@ to do: add in position chart.
 
 ```{r}
 charts.RollingPerformance(Returns,
-                          main = "Dow Jones Returns vs Timing Total Returns (1973-2012)",
+                          main = "SP500 Total Returns vs Timing Total Returns (1973-2012)",
                           date.format = "%Y",
                           colorset = c(4,2),
                           ylog = FALSE,
@@ -257,4 +258,6 @@ charts.RollingPerformance(Returns,
 To do: 
 
 * calculate returns for year before so rolling returns correct from day 1
+* Look at bad data in 1975-1984
+* change scale to 6 months?
 
