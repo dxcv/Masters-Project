@@ -174,46 +174,14 @@ $(document).ready(function () {
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucmVxdWlyZShnZGF0YSkgXG5cbmBgYCJ9 -->
-<pre class="r"><code>require(gdata) 
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc2hpbGxlckRhdGEgPC0gcmVhZC54bHMoVVJMLHNoZWV0PVwiRGF0YVwiLHBhdHRlcm49XCJEYXRlXCIpXG5cbmBgYCJ9 -->
+<pre class="r"><code>shillerData &lt;- read.xls(URL,sheet=&quot;Data&quot;,pattern=&quot;Date&quot;)
 </code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiTG9hZGluZyByZXF1aXJlZCBwYWNrYWdlOiBnZGF0YVxuZ2RhdGE6IFVuYWJsZSB0byBsb2NhdGUgdmFsaWQgcGVybCBpbnRlcnByZXRlclxuZ2RhdGE6IFxuZ2RhdGE6IHJlYWQueGxzKCkgd2lsbCBiZSB1bmFibGUgdG8gcmVhZCBFeGNlbCBYTFMgYW5kIFhMU1ggZmlsZXMgdW5sZXNzIHRoZSAncGVybD0nIGFyZ3VtZW50IGlzIHVzZWQgdG8gc3BlY2lmeSB0aGUgbG9jYXRpb24gb2YgYVxuZ2RhdGE6IHZhbGlkIHBlcmwgaW50cnByZXRlci5cbmdkYXRhOiBcbmdkYXRhOiAoVG8gYXZvaWQgZGlzcGxheSBvZiB0aGlzIG1lc3NhZ2UgaW4gdGhlIGZ1dHVyZSwgcGxlYXNlIGVuc3VyZSBwZXJsIGlzIGluc3RhbGxlZCBhbmQgYXZhaWxhYmxlIG9uIHRoZSBleGVjdXRhYmxlIHNlYXJjaFxuZ2RhdGE6IHBhdGguKVxuZ2RhdGE6IFVuYWJsZSB0byBsb2FkIHBlcmwgbGliYXJpZXMgbmVlZGVkIGJ5IHJlYWQueGxzKClcbmdkYXRhOiB0byBzdXBwb3J0ICdYTFgnIChFeGNlbCA5Ny0yMDA0KSBmaWxlcy5cblxuZ2RhdGE6IFVuYWJsZSB0byBsb2FkIHBlcmwgbGliYXJpZXMgbmVlZGVkIGJ5IHJlYWQueGxzKClcbmdkYXRhOiB0byBzdXBwb3J0ICdYTFNYJyAoRXhjZWwgMjAwNyspIGZpbGVzLlxuXG5nZGF0YTogUnVuIHRoZSBmdW5jdGlvbiAnaW5zdGFsbFhMU1hzdXBwb3J0KCknXG5nZGF0YTogdG8gYXV0b21hdGljYWxseSBkb3dubG9hZCBhbmQgaW5zdGFsbCB0aGUgcGVybFxuZ2RhdGE6IGxpYmFyaWVzIG5lZWRlZCB0byBzdXBwb3J0IEV4Y2VsIFhMUyBhbmQgWExTWCBmb3JtYXRzLlxuXG5BdHRhY2hpbmcgcGFja2FnZTog46S847ixZ2RhdGHjpLzjuLJcblxuVGhlIGZvbGxvd2luZyBvYmplY3RzIGFyZSBtYXNrZWQgZnJvbSDjpLzjuLFwYWNrYWdlOnh0c+OkvOO4sjpcblxuICAgIGZpcnN0LCBsYXN0XG5cblRoZSBmb2xsb3dpbmcgb2JqZWN0IGlzIG1hc2tlZCBmcm9tIOOkvOO4sXBhY2thZ2U6c3RhdHPjpLzjuLI6XG5cbiAgICBub2JzXG5cblRoZSBmb2xsb3dpbmcgb2JqZWN0IGlzIG1hc2tlZCBmcm9tIOOkvOO4sXBhY2thZ2U6dXRpbHPjpLzjuLI6XG5cbiAgICBvYmplY3Quc2l6ZVxuXG5UaGUgZm9sbG93aW5nIG9iamVjdCBpcyBtYXNrZWQgZnJvbSDjpLzjuLFwYWNrYWdlOmJhc2XjpLzjuLI6XG5cbiAgICBzdGFydHNXaXRoXG4ifQ== -->
-<pre><code>Loading required package: gdata
-gdata: Unable to locate valid perl interpreter
-gdata: 
-gdata: read.xls() will be unable to read Excel XLS and XLSX files unless the 'perl=' argument is used to specify the location of a
-gdata: valid perl intrpreter.
-gdata: 
-gdata: (To avoid display of this message in the future, please ensure perl is installed and available on the executable search
-gdata: path.)
-gdata: Unable to load perl libaries needed by read.xls()
-gdata: to support 'XLX' (Excel 97-2004) files.
-
-gdata: Unable to load perl libaries needed by read.xls()
-gdata: to support 'XLSX' (Excel 2007+) files.
-
-gdata: Run the function 'installXLSXsupport()'
-gdata: to automatically download and install the perl
-gdata: libaries needed to support Excel XLS and XLSX formats.
-
-Attaching package: 㤼㸱gdata㤼㸲
-
-The following objects are masked from 㤼㸱package:xts㤼㸲:
-
-    first, last
-
-The following object is masked from 㤼㸱package:stats㤼㸲:
-
-    nobs
-
-The following object is masked from 㤼㸱package:utils㤼㸲:
-
-    object.size
-
-The following object is masked from 㤼㸱package:base㤼㸲:
-
-    startsWith</code></pre>
+<!-- rnb-output-begin eyJkYXRhIjoidHJ5aW5nIFVSTCAnaHR0cDovL3d3dy5lY29uLnlhbGUuZWR1L35zaGlsbGVyL2RhdGEvaWVfZGF0YS54bHMnXG5Db250ZW50IHR5cGUgJ2FwcGxpY2F0aW9uL3ZuZC5tcy1leGNlbCcgbGVuZ3RoIDg2MDY3MiBieXRlcyAoODQwIEtCKVxuZG93bmxvYWRlZCA4NDAgS0JcbiJ9 -->
+<pre><code>trying URL 'http://www.econ.yale.edu/~shiller/data/ie_data.xls'
+Content type 'application/vnd.ms-excel' length 860672 bytes (840 KB)
+downloaded 840 KB</code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->

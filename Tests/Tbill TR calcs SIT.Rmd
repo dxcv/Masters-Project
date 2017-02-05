@@ -4,6 +4,12 @@ output: html_notebook
 ---
 
 ```{r}
+
+rm(list = ls(envir = globalenv()),envir = globalenv()) #clear Vars from global enviroment
+gc()  #grabage colector
+cat("\014") #clc
+.rs.restartR() #clear session
+
 library(SIT)
 # load 3-Month Treasury Bill from FRED (BIL)
 filename = 'data/TB3M.Rdata'
