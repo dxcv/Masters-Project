@@ -241,6 +241,7 @@ charts.PerformanceSummary(Returns,
                           colorset = c(4,2),
                           ylog = TRUE,
                           minor.ticks =FALSE)
+
 ```
 
 to do: add in position chart.
@@ -260,4 +261,3 @@ To do:
 * calculate returns for year before so rolling returns correct from day 1
 * Look at bad data in 1975-1984
 * change scale to 6 months?
-

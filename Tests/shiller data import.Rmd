@@ -1,23 +1,93 @@
 ---
-title: "R Notebook"
+title: "Import Shiller Data Notebook"
 output: html_notebook
 ---
 
 ```{r}
 require(quantmod)
 require(PerformanceAnalytics)
+require(gdata) 
+
+#get Shiller data for inflation and US Treasury 10 year
+URL <- "http://www.econ.yale.edu/~shiller/data/ie_data.xls"
+OriginalshillerData <- read.xls(URL,sheet="Data",pattern="Rate GS10")
+
+#strip out Date(1), Pirce (2), Divs (3) and GS10(7)
+shillerData <- OriginalshillerData[,c(1,2,3,7)]
+shillerData$Date <- seq(as.Date("1871-02-01"), length=NROW(shillerData), by="1 month") - 1
+
+shillerData$P <- as.numeric(as.character(shillerData$P))
+shillerData$D <- as.numeric(as.character(shillerData$D))
+shillerData$Rate.GS10 <- as.numeric(as.character(shillerData$Rate.GS10))
+
+#subset
+shillerData <- shillerData[shillerData$Date >= as.Date("1899-12-31") & shillerData$Date <= as.Date("2012-12-31"),]
+
+#create rets
+shillerData$P.ret <- c(0,diff(shillerData$P)/lag(shillerData$P)[-1])
+shillerData$Divyield <- shillerData$D/12/shillerData$P
+
+
+
+sum(shillerData$P)
+
+#create xts
+shillerData.xts <- as.xts(shillerData,order.by=shillerData$Date)[,-1]
+
+sum(shillerData.xts$P)
+
+#subset
+shillerData.xts <- shillerData.xts["1899-12-31::2012-12-31"]
+
+sum(shillerData.xts$P)
+                                
+sum(as.numeric(as.character(shillerData$P)))
+
+shillerData.xts$D <- as.numeric(as.character(shillerData.xts$D))
+shillerData.xts$Rate.GS10 <- as.numeric(shillerData.xts$Rate.GS10)
+
+
+shillerData.xts$P.return <- c(0,diff(shillerData.xts$P)/lag(shillerData.xts$P)[-1])
+
+
+
+
+#create dataframe - tidyverse not compatible with xts?
+shillerData.df <- data.frame(date=index(shillerData.xts), coredata(shillerData.xts)) #, row.names = index(AllAssets))
+```
+
+
+```{r}
+library(dplyr)
+#mutate new columns
+
+shillerData.df <- mutate(shillerData.df,
+                         "SP.Return" = c(0,diff(P)/lag(P)[-1])
+                         )
+
+
+
+
+AllAssets.df  <- mutate(AllAssets.df, 
+  "10mSMA" = rollmean(SP500.Close,10,fill = 0,align = "right"),
+  "Asset.ret" = c(0,diff(SP500.Close)/lag(SP500.Close)[-1]),
+  "Rf.ret" = lag((TBILLS.Close/100)/12),
+  "signal" = lag(ifelse(SP500.Close>`10mSMA`,1,0)),
+  "Timing.ret" = ifelse(signal == 1,Asset.ret,Rf.ret) 
+)
+
+
+
+
+
+test <- ROC(shillerData.xts$P, type = "continuous")
+
+as.yearmon(head(as.numeric(shillerData$Date),12),format = "%Y.%m")
+
+seq(as.Date("1871-02-01"), length=24, by="1 month") - 1
 
 getSymbols("BAA",src="FRED") #load Corporate for credit from Fed Fred
 
-#get Shiller data for inflation and US Treasury 10 year
-require(gdata) 
-URL <- "http://www.econ.yale.edu/~shiller/data/ie_data.xls"
-shillerData <- read.xls(URL,sheet="Data",pattern="Date")
-#strip out date(1), CPI(5), and GS10(7)
-shillerData <- shillerData[,c(1,5,7)]
-#get data starting in January 1919 to match with BAA xts series
-shillerData <- shillerData[rownames(shillerData[which(shillerData$Date==format(index(BAA)[1],"%Y.%m")):NROW(shillerData),]),2:3]
-shillerData <- xts(shillerData[1:NROW(BAA),1:2],order.by=index(BAA))
 
 bondReturnSources<-merge(BAA,shillerData)
 bondReturnSources[,1]<-bondReturnSources[,1]-bondReturnSources[,3]
@@ -25,6 +95,8 @@ bondReturnSources[,1]<-bondReturnSources[,1]-bondReturnSources[,3]
 bondReturnSources[,2]<-ROC(bondReturnSources[,2],12,type="discrete")*100
 bondReturnSources[,3]<-bondReturnSources[,3]-bondReturnSources[,2]
 bondReturnSources<-merge(bondReturnSources,bondReturnSources[,1]+bondReturnSources[,2]+bondReturnSources[,3])
+
+
 
 colnames(bondReturnSources)<-c("Credit","Inflation","Real","Total")
 
@@ -34,6 +106,9 @@ mtext("Source: Federal Reserve FRED and Robert Shiller",side=1,adj=0)
 
 chart.Boxplot(bondReturnSources,main="Historical Sources of Bond Returns",colorset=c("cadetblue","darkolivegreen3","goldenrod","gray70"))
 mtext("Source: Federal Reserve FRED and Robert Shiller",side=1,adj=0)
+
+```
+
 
 ```
 
