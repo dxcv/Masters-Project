@@ -98,7 +98,6 @@ rownames(TimeInvestedStats) <- c("0% Invested (all cash)",
                                  "60% Invested",
                                  "80% Invested",
                                  "100% Invested (fully invested)")
-TimeInvestedStats
 
 paste("On average the investor is ", 
       round(20*sum(c(0,1,2,3,4,5) * TimeInvestedStats$`# of Months`) / sum(TimeInvestedStats$`# of Months`),2), 
@@ -109,19 +108,88 @@ colnames(BarChartData) <- c("Date","InvestedAssets")
 ggplot(data=BarChartData, aes(x=Date, y=InvestedAssets)) +
   geom_bar(stat = "identity", width = 20) + 
   labs(title = "Number of Assets Invested in at Time", x = "Year", y = "Assets")
+write.table(TimeInvestedStats, "clipboard", sep="\t", col.names=NA) #copies to clipboad for word/excel
 ```
 
 * need to format better
 
+
+####extending
+
+```{r}
+TimeInvestedCalcs <- transmute(TimingModelCalcs,
+  "Date" = date,
+  "AssetsInvested" =  SP500.signal +  EAFE.signal + US10YR.signal + GSCI.signal + NAREIT.signal
+)
+
+TimeInvestedCalcs.xts <- xts(TimeInvestedCalcs[,-1], order.by = TimeInvestedCalcs$Date)
+
+SubsetPeriod <- "1972-12-31::2016-12-31"
+TimeInvestedCalcs.xts <- TimeInvestedCalcs.xts[SubsetPeriod]
+
+#Tabulate and turn into data.frame
+TimeInvestedStats <- as.data.frame(table(TimeInvestedCalcs.xts))
+TimeInvestedStats <- transform(TimeInvestedStats,
+                  "Percentage of Months" = prop.table(Freq))
+
+colnames(TimeInvestedStats) <- c("Number of Positions","# of Months","% of Months")
+TimeInvestedStats$`% of Months` <- round(TimeInvestedStats$`% of Months`,4)*100
+rownames(TimeInvestedStats) <- c("0% Invested (all cash)",
+                                 "20% Invested",
+                                 "40% Invested",
+                                 "60% Invested",
+                                 "80% Invested",
+                                 "100% Invested (fully invested)")
+
+paste("On average the investor is ", 
+      round(20*sum(c(0,1,2,3,4,5) * TimeInvestedStats$`# of Months`) / sum(TimeInvestedStats$`# of Months`),2), 
+      "% invested", sep ="")
+
+write.table(TimeInvestedStats, "clipboard", sep="\t", col.names=NA) #copies to clipboad for word/excel
+```
+
+For just 2013-2016
+```{r}
+TimeInvestedCalcs <- transmute(TimingModelCalcs,
+  "Date" = date,
+  "AssetsInvested" =  SP500.signal +  EAFE.signal + US10YR.signal + GSCI.signal + NAREIT.signal
+)
+
+TimeInvestedCalcs.xts <- xts(TimeInvestedCalcs[,-1], order.by = TimeInvestedCalcs$Date)
+
+SubsetPeriod <- "2012-12-31::2016-12-31"
+TimeInvestedCalcs.xts <- TimeInvestedCalcs.xts[SubsetPeriod]
+
+#Tabulate and turn into data.frame
+TimeInvestedStats <- as.data.frame(table(TimeInvestedCalcs.xts))
+TimeInvestedStats <- transform(TimeInvestedStats,
+                  "Percentage of Months" = prop.table(Freq))
+
+colnames(TimeInvestedStats) <- c("Number of Positions","# of Months","% of Months")
+TimeInvestedStats$`% of Months` <- round(TimeInvestedStats$`% of Months`,4)*100
+rownames(TimeInvestedStats) <- c("0% Invested (all cash)",
+                                 "20% Invested",
+                                 "40% Invested",
+                                 "60% Invested",
+                                 "80% Invested",
+                                 "100% Invested (fully invested)")
+
+paste("On average the investor is ", 
+      round(20*sum(c(0,1,2,3,4,5) * TimeInvestedStats$`# of Months`) / sum(TimeInvestedStats$`# of Months`),2), 
+      "% invested", sep ="")
+
+write.table(TimeInvestedStats, "clipboard", sep="\t", col.names=NA) #copies to clipboad for word/excel
+```
+
 ####Performance Charts
 
 ```{r}
-SubsetPeriod <- "1973-01-31::2012-12-31" 
+SubsetPeriod <- "1973-01-31::2016-12-31" 
 Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
 CumReturns <- 100*cumprod(1+Returns[-1,])
 colnames(CumReturns) <- c("Buy & Hold","GTAA")
 
-chart.TimeSeries(CumReturns,
+chart.TimeSeries(CumReturns["1973-01-31::2012-12-31"],
                  main = "Buy & Hold vs Timing Model, 1973-2012, log scale",
                  date.format = "%Y",
                  colorset = c(4,2),
@@ -131,10 +199,8 @@ chart.TimeSeries(CumReturns,
                  legend.loc = "left",
                  major.ticks = "years",
                  minor.ticks = FALSE)
-```
 
-```{r}
-chart.TimeSeries(CumReturns,
+chart.TimeSeries(CumReturns["1973-01-31::2012-12-31"],
                  main = "Buy & Hold vs Timing Model, 1973-2012, non-log scale",
                  date.format = "%Y",
                  colorset = c(4,2),
@@ -144,8 +210,45 @@ chart.TimeSeries(CumReturns,
                  legend.loc = "left",
                  major.ticks = "years",
                  minor.ticks = FALSE)
-```
 
+chart.TimeSeries(CumReturns["1973-01-31::2016-12-31"],
+                 main = "Buy & Hold vs Timing Model, 1973-2016, log scale",
+                 date.format = "%Y",
+                 colorset = c(4,2),
+                 ylab = "",
+                 ylog = TRUE,
+                 ylim = c(80,6000),
+                 legend.loc = "left",
+                 major.ticks = "years",
+                 minor.ticks = FALSE)
+
+chart.TimeSeries(CumReturns["1973-01-31::2016-12-31"],
+                 main = "Buy & Hold vs Timing Model, 1973-2016, non-log scale",
+                 date.format = "%Y",
+                 colorset = c(4,2),
+                 ylab = "",
+                 ylog = FALSE,
+                 ylim = c(80,6300),
+                 legend.loc = "left",
+                 major.ticks = "years",
+                 minor.ticks = FALSE)
+
+SubsetPeriod <- "2013-01-31::2016-12-31" 
+Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c("Buy & Hold","GTAA")
+
+chart.TimeSeries(CumReturns,
+                 main = "Buy & Hold vs Timing Model, 1973-2012, non-log scale",
+                 date.format = "%Y",
+                 colorset = c(4,2),
+                 ylab = "",
+                 ylog = FALSE,
+                 #ylim = c(80,240),
+                 legend.loc = "left",
+                 major.ticks = "years",
+                 minor.ticks = FALSE)
+```
 
 ```{r}
 SubsetPeriod <- "1973-01-31::2012-12-31" 
@@ -165,9 +268,28 @@ write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
 ```
 to do: 
 
-* why sharpe ratio is different - use RF
+* why sharpe ratio is different - use RF!!!
 * % positive months
 * CAGR
+
+
+```{r}
+SubsetPeriod <- "2007-01-31::2016-12-31" 
+Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
+
+stats <- rbind(Return.annualized(Returns,scale = 12), 
+               StdDev.annualized(Returns,scale = 12), 
+               SharpeRatio.annualized(Returns,Rf = 0.0541/12),
+               maxDrawdown(Returns,invert = FALSE),
+               c(Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod],scale = 12))
+               )
+
+colnames(stats) <- c("Buy & Hold","GTAA")
+rownames(stats) <- c("Return","Volatility","Sharpe","MaxDD","Inflation CAGR")
+round(stats,2)
+write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
+```
+
 
 ### Yearly Returns
 

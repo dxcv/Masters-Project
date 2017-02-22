@@ -68,14 +68,14 @@ AllAssets.ret <- Return.calculate(AllAssets)[-1,]
 AllAssets.cumret <- 100*cumprod(1+ ROC(AllAssets, type = "discrete")[-1,])
 
 chart.TimeSeries(AllAssets.cumret["1972-12-31::2012-12-31"],
-                 main = "Figure 3 - Asset Class Returns 1973-2012, Log Scale",
+                 main = "Figure 1 - Asset Class Returns 1973-2012, Log Scale",
                  #lty = "2",
                  ylab = "",
                  ylog = TRUE,
                  ylim = c(40,6000),
                  date.format = "%Y",
                  major.ticks = "years",
-                 legend.loc = "bottomright",
+                 legend.loc = "topleft",
                  colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue"), #bluefocus, #create own colorset at some point
                  minor.ticks =FALSE)
 ```
@@ -85,6 +85,35 @@ To do:
 * add CPI
 * create same colourset / scale
 
+### Extending to 2016
+```{r}
+chart.TimeSeries(AllAssets.cumret["1972-12-31::2016-12-31"],
+                 main = "Figure 2 - Asset Class Returns 1973-2016, Log Scale",
+                 #lty = "2",
+                 ylab = "",
+                 ylog = TRUE,
+                 ylim = c(40,6000),
+                 date.format = "%Y",
+                 major.ticks = "years",
+                 legend.loc = "topleft",
+                 colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue"), #bluefocus, #create own colorset at some point
+                 minor.ticks =FALSE)
+```
+
+### Looking at last 4 years
+```{r}
+chart.TimeSeries(AllAssets.cumret["2012-12-31::2016-12-31"],
+                 main = "Figure 3 - Asset Class Returns 2012-2016, Non-log Scale",
+                 #lty = "2",
+                 ylab = "",
+                 ylog = FALSE,
+                 ylim = c(500,8000),
+                 date.format = "%Y",
+                 major.ticks = "years",
+                 legend.loc = "topleft",
+                 colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue"), #bluefocus, #create own colorset at some point
+                 minor.ticks =FALSE)
+```
 
 ####Analysing returns and drawdowns.
 
@@ -92,15 +121,17 @@ To do:
 ```{r}
 #subset to required dates
 Returns <- AllAssets.ret["1972-12-31::2012-12-31"]
-stats <- rbind(Return.annualized(Returns,scale = 12)*100, 
-               StdDev.annualized(Returns,scale = 12)*100, 
+stats <- rbind(Return.annualized(Returns,scale = 12), 
+               StdDev.annualized(Returns,scale = 12), 
                SharpeRatio.annualized(Returns,Rf = AllAssets.ret$TBILLS),
-               maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
-               c(100*Return.annualized(Returns$CPI,scale = 12)))
+               maxDrawdown(Returns,scale = 12,invert = FALSE),
+               c(Return.annualized(Returns$CPI,scale = 12)))
 
 colnames(stats) <- symbols
 rownames(stats) <- c("Return","Volatility","Sharpe (5.41%)","MaxDD","Inflation CAGR")
-round(stats[,-7],2)
+stats <- round(stats[,-7],4)
+stats
+write.table(stats, "clipboard", sep="\t", col.names=NA) #copies to clipboad for word/excel
 ```
 
 To do:
@@ -110,6 +141,23 @@ To do:
 * format into percentages
 * is table needed showing differences to original research?
 * source actual inflation
+
+### Extending to 2016
+```{r}
+#subset to required dates
+Returns <- AllAssets.ret["1972-12-31::2016-12-31"]
+stats <- rbind(Return.annualized(Returns,scale = 12), 
+               StdDev.annualized(Returns,scale = 12), 
+               SharpeRatio.annualized(Returns,Rf = AllAssets.ret$TBILLS),
+               maxDrawdown(Returns,scale = 12,invert = FALSE),
+               c(Return.annualized(Returns$CPI,scale = 12)))
+
+colnames(stats) <- symbols
+rownames(stats) <- c("Return","Volatility","Sharpe (5.41%)","MaxDD","Inflation CAGR")
+stats <- round(stats[,-7],4)
+stats
+write.table(stats, "clipboard", sep="\t", col.names=NA) #copies to clipboad for word/excel
+```
 
 
 ####Drawdown chart
