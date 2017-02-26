@@ -1,0 +1,217 @@
+---
+title: "Replication of Faber's A Quantitative Approach to Tactical Asset Allocation - Managing Risk"
+output: html_notebook
+---
+
+####Importing the data into R
+
+Each asset's class price series has been saved as a CSV. The packages used for performance analysis and backtesting require the data to be xts objects which are created by the following code.
+
+```{r, message=FALSE}
+#remove past data
+rm(list = ls(envir = globalenv()),envir = globalenv()) #clear Vars from global enviroment
+
+#load required packages
+library(PerformanceAnalytics)
+library(quantstrat)
+
+#declare symbols
+symbols <- c("TBILLS","SP500","EAFE","US10YR","GSCI","NAREIT","CPI")
+
+#use quantmod function to load data as xts objects
+getSymbols(symbols,
+  src = "csv",
+  dir="../Data/CSV files",
+  col.names=c("Close"))
+
+#also load TBILL YIELDS
+getSymbols("TBILLYIELDS",
+  src = "csv",
+  dir="../Data/CSV files",
+  col.names=c("Close"))
+
+#Define the asset to look at calcs for - ideally do this in a loop at the end
+assetname <- "EAFE"
+asset <- get(assetname)
+
+#Define the subset period
+SubsetPeriod <- "1973-01-31::2008-12-31" 
+```
+
+####Managing Risk 
+
+Faber introduces a timing system for investors to use to manage the risk. Lets chart the 10 month simple moving average
+
+```{r}
+myChart_Theme <- chart_theme() #Create a chart_theme
+myChart_Theme$col$line.col <- "blue"
+
+SMAperiod <- 10
+
+chart_Series(Cl(asset),
+  name = paste(assetname," vs 10 Month Simple Moving Average",sep = ""),
+  theme=myChart_Theme,
+  type = "line",
+  subset = SubsetPeriod,
+  TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
+  )
+
+# #why doesn't this for loop work????
+# for(symbol in symbols[2:6]){
+#   assetname <- symbol
+#   asset <- get(assetname)
+#   
+#   chart_Series(Cl(asset),
+#     name = paste(assetname," vs 10 Month Simple Moving Average",sep = ""),
+#     theme=myChart_Theme,
+#     type = "line",
+#     subset = SubsetPeriod,
+#     TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
+#     )
+# }
+```
+
+To - do 
+
+ ylog = TRUE,
+ ylim = c(40,6000),
+ date.format = "%Y",
+ major.ticks = "years",
+ 
+* make it pull asset as variable, get log chart
+* chart.posn (blotter) to show when in and out?
+*add drawdown
+* look at adding visualisation when its in / out of the market http://timelyportfolio.blogspot.co.za/2011/08/drawdown-visualization.html
+* add legend
+
+####Calculating returns
+ 
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)
+
+AllAssets <- cbind.xts(Cl(asset),
+                       Cl(TBILLYIELDS))    
+
+#create dataframe - tidyverse not compatible with xts?
+AllAssets.df <- data.frame(date=index(AllAssets), coredata(AllAssets)) #, row.names = index(AllAssets))
+
+#rename column for the Asset
+colnames(AllAssets.df)[2] <- "Asset.Close"
+
+#mutate new columns
+AllAssets.df  <- mutate(AllAssets.df, 
+  "10mSMA" = rollmean(Asset.Close,10,fill = 0,align = "right"),
+  "Asset.ret" = c(0,diff(Asset.Close)/lag(Asset.Close)[-1]),
+  "Rf.ret" = lag((TBILLYIELDS.Close/100)/12),
+  "signal" = lag(ifelse(Asset.Close>`10mSMA`,1,0)),
+  "Timing.ret" = ifelse(signal == 1,Asset.ret,Rf.ret) 
+)
+
+rownames(AllAssets.df) <- index(AllAssets)
+
+#detach the packagae dplyr as it isn't compatible with other packages?
+detach(package:dplyr)
+```
+
+####Calculating Stats
+
+First lets create an xts of Returns
+```{r}
+SubsetPeriod <- "1972-12-31::2008-12-31"
+AllAssets <- as.xts(AllAssets.df[,-1])
+Returns <- cbind.xts(AllAssets$Asset.ret, AllAssets$Timing.ret)[SubsetPeriod]
+colnames(Returns) <- c(assetname,"Timing")
+
+#for calculating the sharpe ratio later
+Rf.ret <- Return.calculate(TBILLS)[-1,]
+Rf.ret <- Rf.ret[SubsetPeriod]
+
+#create Cum returns for the chart
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c(assetname,"Timing")
+```
+
+####Chart the returns
+
+```{r}
+chart.TimeSeries(CumReturns,
+  main = paste(assetname," vs Timing Model ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Log Scale",sep = ""),
+  date.format = "%Y",
+  colorset = c(4,2),
+  ylab = "",
+  ylog = TRUE,
+  ylim = c(50,7500),
+  legend.loc = "left",
+  major.ticks = "years",
+  minor.ticks = FALSE)
+```
+
+todo
+* chart with periods highlighted (similar to position chart)
+
+####Drawdown chart
+
+To give the reader a visual perspective of drawdowns we can chart
+
+```{r}
+chart.Drawdown(Returns,
+  main = paste(assetname," vs Timing Model Drawdowns ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Non-log Scale",sep = ""),
+  date.format = "%Y",
+  colorset = c(4,2),
+  ylab = "Drawdown",
+  legend.loc = "bottom",
+  major.ticks = "years",
+  minor.ticks = FALSE)
+```
+
+to do - ensure same time period and x axis, print one above each other? area shading?
+
+
+```{r}
+stats <- rbind(Return.annualized(Returns,scale = 12)*100, 
+               StdDev.annualized(Returns,scale = 12)*100, 
+               SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLS.Close),
+               maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
+               c(nrow(subset(Returns, Returns$asset >= 0))/nrow(Returns),nrow(subset(Returns, Returns$Timing.ret >= 0))/nrow(Returns))*100)
+
+colnames(stats) <- c("SP500","TIMING")
+rownames(stats) <- c("Return","Volatility","Sharpe","MaxDD","% Positive Months")
+round(stats,2)
+```
+
+To do:
+*fix positive months
+* SHARPE RF!!!!
+* feed in correct Rf for period to get sharpe correct
+* format percentages
+* add $100 becomes and inflation CAGR
+* loop for other asset classes
+* add for another asset class
+* confirm Rf / charpe sharpe to feed off Rf
+
+
+####Chart Rolling Performance
+
+```{r}
+charts.RollingPerformance(Returns, 
+                          main = "SP500 Total Returns vs Timing Total Returns (1973-2012)",
+                          date.format = "%Y",
+                          colorset = c(4,2),
+                          ylog = FALSE,
+                          minor.ticks =FALSE)
+```
+
+To do: 
+
+* calculate returns for year before so rolling returns correct from day 1
+* Look at bad data in 1975-1984
+* change scale to 6 months?
+
+
+#### Position chart
+
+now can create position chart
+```{r}
+
+```

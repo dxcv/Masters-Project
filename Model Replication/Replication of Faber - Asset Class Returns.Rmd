@@ -1,0 +1,203 @@
+---
+title: "Replication of Faber's A Quantitative Approach to Tactical Asset Allocation - Asset Class Returns"
+output: html_notebook
+---
+
+####Importing the data into R
+
+Each asset's class price series has been saved as a CSV. The packages used for performance analysis and backtesting require the data to be xts objects which are created by the following code.
+```{r, message=FALSE}
+#remove past data
+rm(list = ls(envir = globalenv()),envir = globalenv()) #clear Vars from global enviroment
+
+#load required packages
+library(PerformanceAnalytics)
+library(quantstrat)
+
+#declare symbols
+symbols <- c("TBILLS","SP500","EAFE","US10YR","GSCI","NAREIT","CPI")
+
+#use quantmod function to load data as xts objects
+getSymbols(symbols,
+           src = "csv",
+           dir="../Data/CSV files",
+           col.names=c("Close"))
+```
+
+
+#### Calculating asset class returns and replicating the chart in Faber's Figure 3
+
+Once the data is loaded i can create one xts object for the prices and calculate each asset class's returns. The asset class returns are then charted to replicate figure 3 on page 16.
+```{r}
+#combine all closing prices into one xts file
+AllAssets <- cbind.xts(Cl(TBILLS),
+                       Cl(SP500),
+                       Cl(EAFE),
+                       Cl(US10YR),
+                       Cl(GSCI),
+                       Cl(NAREIT),
+                       Cl(CPI))                       
+
+#subset to required period
+AllAssets <- AllAssets["1972-12-31::2016-12-31"]
+colnames(AllAssets) <- symbols
+
+#calculate returns and cum returns
+AllAssets.ret <- Return.calculate(AllAssets)[-1,]
+AllAssets.cumret <- 100*cumprod(1+ ROC(AllAssets, type = "discrete")[-1,])
+
+SubsetPeriod <- "1972-12-31::2012-12-31"
+
+#chart returns
+chart.TimeSeries(AllAssets.cumret[SubsetPeriod],
+  main = paste("Figure 1 - Asset Class Returns ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Log Scale",sep = ""), 
+  #lty = "2",
+  ylab = "",
+  ylog = TRUE,
+  ylim = c(40,6000),
+  date.format = "%Y",
+  major.ticks = "years",
+  legend.loc = "topleft",
+  colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue"), #create own colorset at some point
+  minor.ticks =FALSE)
+```
+to do list:
+
+* confirm colorset matches
+* create same scale if possible
+
+### Extend Asset Class Returns chart to include recent data from 2013-2016
+
+Now by easily changing the subset dates, the code can produce a chart that includes the most recent years returns
+```{r}
+SubsetPeriod <- "1972-12-31::2016-12-31"
+chart.TimeSeries(AllAssets.cumret[SubsetPeriod],
+  main = paste("Figure 2 - Asset Class Returns ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Log Scale",sep = ""),
+  #lty = "2",
+  ylab = "",
+  ylog = TRUE,
+  ylim = c(40,6100),
+  date.format = "%Y",
+  major.ticks = "years",
+  legend.loc = "topleft",
+  colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue"),
+  minor.ticks =FALSE)
+```
+
+### Focusing on the last 4 years of returns
+
+The same code can be manipulated to calculate asset class returns focusing on the most recent years
+```{r}
+#subset to required period
+SubsetPeriod <- "2012-12-31::2016-12-31"
+AllAssets2 <- AllAssets[SubsetPeriod]
+
+#calculate returns and cum returns
+AllAssets2.ret <- Return.calculate(AllAssets2)[-1,]
+AllAssets2.cumret <- 100*cumprod(1+ ROC(AllAssets2, type = "discrete")[-1,])
+
+#chart
+chart.TimeSeries(AllAssets2.cumret,
+  main = paste("Figure 3 - Asset Class Returns ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Non-log Scale",sep = ""),
+  ylab = "",
+  ylog = FALSE,
+  #ylim = c(0,300),
+  date.format = "%Y",
+  major.ticks = "years",
+  legend.loc = "topleft",
+  colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue"),
+  minor.ticks =FALSE)
+```
+
+todo - add 100 in first row
+
+####Analysing asset class returns, max drawdowns and other performance statistics
+
+Using the package performance analytics, common performance statistics such as CAGR, volatility and sharpe ratios can be calculated. This code replicates Faber's figure 4 on page 17
+```{r}
+#subset to required dates
+SubsetPeriod <- "1972-12-31::2012-12-31"
+
+#Create xts for Returns
+Returns <- AllAssets.ret[SubsetPeriod]
+
+#calculate statistics and store as "stats"
+stats <- rbind(100*Return.annualized(Returns,scale = 12), 
+               100*StdDev.annualized(Returns,scale = 12), 
+               SharpeRatio.annualized(Returns,Rf = AllAssets.ret$TBILLS),
+               100*maxDrawdown(Returns,scale = 12,invert = FALSE),
+               100*c(Return.annualized(Returns$CPI,scale = 12)))
+
+#rename table rows/column names and format
+colnames(stats) <- symbols
+rownames(stats) <- c("Return","Volatility",paste("Sharpe (",round(stats[1,"TBILLS"],2),"%)", sep = ""),"MaxDD","Inflation CAGR")
+stats <- round(stats[,-7],2)
+```
+
+Lets print the stats:
+```{r, echo=FALSE}
+stats
+
+#copies stats to clipboad for pasting into word/excel
+write.table(stats, "clipboard", sep="\t", col.names=NA) 
+```
+
+To do:
+
+* confirm correct rate for Rf (Faber uses 5.41%) and that sharpe ratio is calculating correctly. TBILL should be zero!
+* note that sharpe 5.41% is actually 4.8% according to the R quantstrat package models. Diff between monthly and annual?
+* format into percentages?
+
+####Differences to Faber's research performance statistics
+
+Lets save Fabers data from Figure 4 to calculate differences from the replicated data and calcs above.
+```{r}
+FabersStats <- c(5.41,9.7,9.17,8.18,8.32,9.65,0.95,15.69,17.61,8.44,20.55,18.13,0,0.27,0.21,0.33,0.14,0.23,0,-50.95,-56.4,-15.79,-67.65,-67.88,4.3,4.3,4.3,4.3,4.3,4.3)
+originalstats <- matrix(FabersStats,ncol = 6,byrow = TRUE)
+colnames(originalstats) <- symbols[-7]
+rownames(originalstats) <- c("Return","Volatility","Sharpe (5.41%)","MaxDD","Inflation CAGR")
+```
+
+Now lets print Faber's Stats:
+```{r, echo=FALSE}
+originalstats
+```
+
+And print differences (replicated stats less faber):
+```{r, echo=FALSE}
+stats - originalstats
+```
+
+
+
+#### Extending the performance stats to include the years 2013-2016
+
+```{r}
+#subset to required dates
+Returns <- AllAssets.ret["1972-12-31::2016-12-31"]
+currentstats <- rbind(100*Return.annualized(Returns,scale = 12), 
+               100*StdDev.annualized(Returns,scale = 12), 
+               SharpeRatio.annualized(Returns,Rf = AllAssets.ret$TBILLS),
+               100*maxDrawdown(Returns,scale = 12,invert = FALSE),
+               100*c(Return.annualized(Returns$CPI,scale = 12)))
+
+colnames(currentstats) <- symbols
+rownames(currentstats) <- c("Return","Volatility",paste("Sharpe (",round(stats[1,"TBILLS"],2),"%)", sep = ""),"MaxDD","Inflation CAGR")
+currentstats <- round(currentstats[,-7],2)
+currentstats
+#write.table(currentstats, "clipboard", sep="\t", col.names=NA) #copies to clipboad for word/excel
+```
+
+Lets look at the changes from the last 4 years:
+
+```{r}
+stats
+currentstats
+currentstats-stats
+round(100*(currentstats/stats-1),2)
+```
+
+
+
+
+
