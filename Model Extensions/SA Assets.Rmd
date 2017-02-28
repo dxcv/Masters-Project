@@ -3,11 +3,7 @@ title: "SA Assets"
 output: html_notebook
 ---
 
-To do:
-SA assets
-Daily drawdowns
-Relative performance / rolling perofrmance / alpha
-10 worst periods / 10 best periods 
+
 
 ```{r, message=FALSE, warning=FALSE}
 #Load required packages
@@ -52,9 +48,4 @@ chart.TimeSeries(AllAssets.cumret["1972-12-31::2016-12-31"],
  colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue"),
  minor.ticks =FALSE)
 ```
-to do:
 
-* how to calculate dailyreturns with NA
-* check returns make sense - effect of zar?
-* compare to US / JPY
-* create RF to get 2002 in
