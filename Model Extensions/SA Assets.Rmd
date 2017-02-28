@@ -40,17 +40,17 @@ colnames(AllAssets) <- symbols
 AllAssets.ret <- Return.calculate(AllAssets)[-1,]
 AllAssets.cumret <- 100*cumprod(1+ ROC(AllAssets, type = "discrete")[-1,])
 
-chart.TimeSeries(AllAssets.cumret["1972-12-31::2012-12-31"],
-                 main = "Figure 3 - SA Asset Class Returns 2003-2012, Log Scale",
-                 #lty = "2",
-                 ylab = "",
-                 ylog = TRUE,
-                 ylim = c(80,1000),
-                 date.format = "%Y",
-                 major.ticks = "years",
-                 legend.loc = "topleft",
-                 colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue"), #bluefocus, #create own colorset at some point
-                 minor.ticks =FALSE)
+chart.TimeSeries(AllAssets.cumret["1972-12-31::2016-12-31"],
+ main = "Figure 3 - SA Asset Class Returns 2003-2012, Log Scale",
+ #lty = "2",
+ ylab = "",
+ ylog = TRUE,
+ ylim = c(80,2000),
+ date.format = "%Y",
+ major.ticks = "years",
+ legend.loc = "topleft",
+ colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue"),
+ minor.ticks =FALSE)
 ```
 to do:
 

@@ -266,11 +266,11 @@ chart.TimeSeries(CumReturns,
 SubsetPeriod <- "1973-01-31::2012-12-31" 
 Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
 
-stats <- rbind(Return.annualized(Returns,scale = 12), 
-               StdDev.annualized(Returns,scale = 12), 
+stats <- rbind(100*Return.annualized(Returns,scale = 12), 
+               100*StdDev.annualized(Returns,scale = 12), 
                SharpeRatio.annualized(Returns,Rf = 0.0541/12),
-               maxDrawdown(Returns,invert = FALSE),
-               c(Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod],scale = 12))
+               100*maxDrawdown(Returns,invert = FALSE),
+               100*c(Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod],scale = 12))
                )
 
 colnames(stats) <- c("Buy & Hold","GTAA")
@@ -289,11 +289,11 @@ to do:
 SubsetPeriod <- "2007-01-31::2016-12-31" 
 Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
 
-stats <- rbind(Return.annualized(Returns,scale = 12), 
-               StdDev.annualized(Returns,scale = 12), 
+stats <- rbind(100*Return.annualized(Returns,scale = 12), 
+               100*StdDev.annualized(Returns,scale = 12), 
                SharpeRatio.annualized(Returns,Rf = 0.0541/12),
-               maxDrawdown(Returns,invert = FALSE),
-               c(Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod],scale = 12))
+               100*maxDrawdown(Returns,invert = FALSE),
+               100*c(Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod],scale = 12))
                )
 
 colnames(stats) <- c("Buy & Hold","GTAA")
@@ -418,4 +418,10 @@ Summary
 
 * THE GTAA timing strategy continued to perform as it has in the past relative to the Buy and Hold strategy.
 ** From 2013 to 2016, although returns were slightly worse than the Buy and Hold there were with much less volatility and lower drawdowns.
+
+```{r}
+table.Drawdowns(Returns)
+table.Drawdowns(Returns$GTAA.ret)
+
+```
 
