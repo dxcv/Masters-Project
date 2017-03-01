@@ -1,0 +1,52 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(xts) # this also loads zoo which has read.zoo
+SAASSETS = read.csv("CSV Files/SA Long Term/SAASSETS.csv", header = TRUE)
+SAASSETS$Date<-as.Date(SAASSETS$Date, origin = "1899-12-30")
+
+JALSH <- xts(SAASSETS$JALSH, order.by = SAASSETS$Date)
+colnames(JALSH) <- c("JALSH")
+
+MSCIWORLD <- xts(SAASSETS$MSCIWORLD, order.by = SAASSETS$Date)
+colnames(MSCIWORLD) <- c("MSCIWORLD")
+
+SA10YR <- xts(SAASSETS$SA10YR, order.by = SAASSETS$Date)
+colnames(SA10YR) <- c("SA10YR")
+
+GSCI <- xts(SAASSETS$GSCI, order.by = SAASSETS$Date)
+colnames(GSCI) <- c("GSCI")
+
+JSAPY <- xts(SAASSETS$JSAPY, order.by = SAASSETS$Date)
+colnames(JSAPY) <- c("JSAPY")
+JSAPY <- JSAPY["1992-12-31::2016-12-31"]
+
+TBILLS <- xts(SAASSETS$TBILLS, order.by = SAASSETS$Date)
+colnames(TBILLS) <- c("TBILLS")
+
+SACPI <- xts(SAASSETS$SACPI, order.by = SAASSETS$Date)
+colnames(SACPI) <- c("SACPI")
+
+USDZAR <- xts(SAASSETS$USDZAR, order.by = SAASSETS$Date)
+colnames(USDZAR) <- c("USDZAR")
+
+rm(SAASSETS)
+
+```
+
+```{r}
+#save as CSV files for use in other files - change to loop at some point
+write.zoo(JALSH, file="CSV Files/SA Long Term/JALSH.csv", sep=",")
+write.zoo(MSCIWORLD, file="CSV Files/SA Long Term/MSCIWORLD.csv", sep=",")
+write.zoo(SA10YR, file="CSV Files/SA Long Term/SA10YR.csv", sep=",")
+write.zoo(GSCI, file="CSV Files/SA Long Term/GSCI.csv", sep=",")
+write.zoo(JSAPY, file="CSV Files/SA Long Term/JSAPY.csv", sep=",")
+write.zoo(TBILLS, file="CSV Files/SA Long Term/TBILLS.csv", sep=",")
+write.zoo(SACPI, file="CSV Files/SA Long Term/SACPI.csv", sep=",")
+write.zoo(USDZAR, file="CSV Files/SA Long Term/USDZAR.csv", sep=",")
+```
+
