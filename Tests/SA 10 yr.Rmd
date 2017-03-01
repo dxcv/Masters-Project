@@ -1,0 +1,64 @@
+---
+title: "FRED 10YR Bond Download and Total Return Index Creation"
+output: html_notebook
+---
+
+This file downloads and creates a total return price series for US10YR bonds using data from Fred. 
+
+Data is monthly between 31/12/1971 until 31/12/2016.
+
+```{r}
+#clean workspace 
+#rm(list=ls()[! ls() %in% c("object1","object2")]) #remove all but the objects you define e.g. object1 and object2
+```
+
+```{r, message=FALSE}
+#load required packages
+library(RQuantLib)
+library(quantstrat) 
+library(quantmod)
+library(PerformanceAnalytics)
+library(tidyquant)
+```
+
+```{r}
+#Download FRED data for 10Yr US Bonds
+start.date <- as.Date("1969-12-31")
+end.date <- as.Date("2016-12-31")
+
+getSymbols("IRLTLT01ZAM156N", src="FRED") #download data
+
+SA10YR.yield <- to.monthly(IRLTLT01ZAM156N,indexAt='lastof',drop.time=TRUE)[,4] #convert to monthly
+SA10YR.yield <- SA10YR.yield[paste(start.date,end.date,sep="/")] #subset to required period
+
+rm(start.date,end.date)
+```
+
+Now we have the yields we have to create a total return index. I've adapted a method from http://timelyportfolio.blogspot.co.za/2011/04/historical-bond-price-and-total-returns.html and also used in shillers spreadsheet
+
+```{r}
+SA10YR.return <- SA10YR.yield #set this up to hold price returns
+SA10YR.return[1,1]<-0
+colnames(SA10YR.return)<-"PriceReturn"
+
+for (i in 1:(NROW(SA10YR.yield)-1)) {
+  SA10YR.return[i+1,1]<-FixedRateBondPriceByYield(yield=SA10YR.yield[i+1,1]/100,issueDate=Sys.Date(), 
+                                                     maturityDate= advance("UnitedStates/GovernmentBond", Sys.Date(), 10, 3),
+                                                     rates=SA10YR.yield[i,1]/100,period=2)[1]/100-1
+}
+
+#Total return will be the price return + the previous months yield for one month
+SA10YR.totalreturn<-SA10YR.return+lag(SA10YR.yield,k=1)/12/100
+SA10YR.totalreturn[1,1]<-0
+colnames(SA10YR.totalreturn)<-"Total Return"
+
+#Now we need to create a price index with base 100
+SA10YR <- cumprod(1 + SA10YR.totalreturn) * 100
+
+colnames(SA10YR) <- c("SA10YR.Close")
+```
+
+```{r}
+#save as CSV files
+write.zoo(SA10YR, file="SA10YR.csv", sep=",")
+```
