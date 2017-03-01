@@ -15,12 +15,12 @@ library(PerformanceAnalytics)
 library(quantstrat)
 
 #Set Symbols
-symbols <- c("RiskFree","DomesticEquity","GlobalEquity","FixedIncome","Commodities","RealEstate","CPI")
+symbols <- c("TBILLS","JALSH","MSCIWORLD","SA10YR","GSCI","JASPY","SACPI")
 
 #Import saved pricing data csv files as xts
 getSymbols(symbols,
            src = "csv",
-           dir="../Data/CSV files/SA/",
+           dir="../Data/CSV files/SA Long Term/",
            col.names=c("Close"))
 ```
 
@@ -28,19 +28,19 @@ getSymbols(symbols,
 
 Once the data is loaded i can create one xts object for the prices and calculate each asset class's returns. The asset class returns are then charted.
 ```{r}
-AllAssets <- cbind.xts(Cl(RISKFREE),
-                       Cl(DOMESTICEQUITY),
-                       Cl(GLOBALEQUITY),
-                       Cl(FIXEDINCOME),
-                       Cl(COMMODITIES),
-                       Cl(REALESTATE),
-                       Cl(CPI))                       
+AllAssets <- cbind.xts(Cl(TBILLS),
+                       Cl(JALSH),
+                       Cl(MSCIWORLD),
+                       Cl(SA10YR),
+                       Cl(GSCI),
+                       #Cl(JSAPY),
+                       Cl(SACPI))                       
 
 #subset to required period
-SubsetPeriod <- "2003-06-30::2016-12-31"
+SubsetPeriod <- "1971-01-30::2016-12-31"
 
 AllAssets <- AllAssets[SubsetPeriod]
-colnames(AllAssets) <- symbols
+colnames(AllAssets) <- symbols[-6]
 
 #calculate returns and cum returns
 AllAssets.ret <- Return.calculate(AllAssets)[-1,]
@@ -50,7 +50,7 @@ chart.TimeSeries(AllAssets.cumret[SubsetPeriod],
  main = paste("Figure X - SA Asset Class Returns ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Log Scale",sep = ""), 
  ylab = "",
  ylog = TRUE,
- ylim = c(80,2000),
+ ylim = c(100,200000),
  date.format = "%Y",
  major.ticks = "years",
  legend.loc = "topleft",
@@ -71,13 +71,13 @@ Returns <- AllAssets.ret[SubsetPeriod]
 #calculate statistics and store as "stats"
 stats <- rbind(100*Return.annualized(Returns,scale = 12), 
                100*StdDev.annualized(Returns,scale = 12), 
-               SharpeRatio.annualized(Returns,Rf = AllAssets.ret$RiskFree),
+               SharpeRatio.annualized(Returns,Rf = AllAssets.ret$TBILLS),
                100*maxDrawdown(Returns,scale = 12,invert = FALSE),
-               100*c(Return.annualized(Returns$CPI,scale = 12)))
+               100*c(Return.annualized(Returns$SACPI,scale = 12)))
 
 #rename table rows/column names and format
-colnames(stats) <- symbols
-rownames(stats) <- c("Return","Volatility",paste("Sharpe (",round(stats[1,"RiskFree"],2),"%)", sep = ""),"MaxDD","Inflation CAGR")
+colnames(stats) <- symbols[-6]
+rownames(stats) <- c("Return","Volatility",paste("Sharpe (",round(stats[1,"TBILLS"],2),"%)", sep = ""),"MaxDD","Inflation CAGR")
 stats <- round(stats[,-7],2)
 ```
 
@@ -99,45 +99,47 @@ myChart_Theme$col$line.col <- "blue"
 
 SMAperiod <- 10
 
-chart_Series(Cl(DOMESTICEQUITY),
-  name = paste("Domestic Equity vs 10 Month Simple Moving Average",sep = ""),
+chart_Series(Cl(JALSH),
+  name = paste("JALSH vs 10 Month Simple Moving Average",sep = ""),
   theme=myChart_Theme,
   type = "line",
   subset = SubsetPeriod,
   TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
   )
 
-chart_Series(Cl(GLOBALEQUITY),
-  name = paste("Gloabl Equity vs 10 Month Simple Moving Average",sep = ""),
+chart_Series(Cl(MSCIWORLD),
+  name = paste("MSCI World vs 10 Month Simple Moving Average",sep = ""),
   theme=myChart_Theme,
   type = "line",
   subset = SubsetPeriod,
   TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
   )
 
-chart_Series(Cl(FIXEDINCOME),
-  name = paste("Fixed Income vs 10 Month Simple Moving Average",sep = ""),
+chart_Series(Cl(SA10YR),
+  name = paste("SA10YR vs 10 Month Simple Moving Average",sep = ""),
   theme=myChart_Theme,
   type = "line",
   subset = SubsetPeriod,
   TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
   )
 
-chart_Series(Cl(COMMODITIES),
-  name = paste("Commodities vs 10 Month Simple Moving Average",sep = ""),
+chart_Series(Cl(GSCI),
+  name = paste("GSCI vs 10 Month Simple Moving Average",sep = ""),
   theme=myChart_Theme,
   type = "line",
   subset = SubsetPeriod,
   TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
   )
 
-chart_Series(Cl(REALESTATE),
-  name = paste("Real Estate vs 10 Month Simple Moving Average",sep = ""),
-  theme=myChart_Theme,
-  type = "line",
-  subset = SubsetPeriod,
-  TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
-  )
+# chart_Series(Cl(JSAPY),
+#   name = paste("JSAPY vs 10 Month Simple Moving Average",sep = ""),
+#   theme=myChart_Theme,
+#   type = "line",
+#   subset = SubsetPeriod,
+#   TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
+#   )
+
+#change to other chart so can make it log?
 ```
 
 ####Calculating returns
@@ -145,21 +147,23 @@ chart_Series(Cl(REALESTATE),
 ```{r, message=FALSE, warning=FALSE}
 
 #Import saved pricing data csv files as xts
-getSymbols("RiskFreeYields",
+getSymbols("TBILLYIELDS",
            src = "csv",
-           dir="../Data/CSV files/SA/",
+           dir="../Data/CSV files/SA Long Term/",
            col.names=c("Close"))
+TBILLYIELDS <- TBILLYIELDS[SubsetPeriod]
+
 
 #load an additional library
 library(dplyr)
 
 #Create new all assets
-AllAssets <- cbind.xts(Cl(DOMESTICEQUITY),
-                       Cl(GLOBALEQUITY),
-                       Cl(FIXEDINCOME),
-                       Cl(COMMODITIES),
-                       Cl(REALESTATE),
-                       Cl(RISKFREEYIELDS))   
+AllAssets <- cbind.xts(Cl(JALSH),
+                       Cl(MSCIWORLD),
+                       Cl(SA10YR),
+                       Cl(GSCI),
+                       #Cl(JASPY),
+                       Cl(TBILLYIELDS))   
 
 AllAssets <- AllAssets[SubsetPeriod]
 
@@ -168,29 +172,29 @@ AllAssets.df <- data.frame(date=index(AllAssets), coredata(AllAssets)) #, row.na
 
 #mutate new columns
 AllAssets.df  <- mutate(AllAssets.df,
-  "DOMESTICEQUITY.SMA" =  rollmean(DOMESTICEQUITY.Close,10,fill = 0,align = "right"),
-  "GLOBALEQUITY.SMA" =  rollmean(GLOBALEQUITY.Close,10,fill = 0,align = "right"),
-  "FIXEDINCOME.SMA" =  rollmean(FIXEDINCOME.Close,10,fill = 0,align = "right"),
-  "COMMODITIES.SMA" =  rollmean(COMMODITIES.Close,10,fill = 0,align = "right"),
-  "REALESTATE.SMA" =  rollmean(REALESTATE.Close,10,fill = 0,align = "right"),
-  "DOMESTICEQUITY.ret" =  c(0,diff(DOMESTICEQUITY.Close)/lag(DOMESTICEQUITY.Close)[-1]),
-  "GLOBALEQUITY.ret" =  c(0,diff(GLOBALEQUITY.Close)/lag(GLOBALEQUITY.Close)[-1]),
-  "FIXEDINCOME.ret" =  c(0,diff(FIXEDINCOME.Close)/lag(FIXEDINCOME.Close)[-1]),
-  "COMMODITIES.ret" =  c(0,diff(COMMODITIES.Close)/lag(COMMODITIES.Close)[-1]),
-  "REALESTATE.ret" =  c(0,diff(REALESTATE.Close)/lag(REALESTATE.Close)[-1]),
-  "RF.ret" =  lag((2*RISKFREEYIELDS.Close/100)/12),
-  "DOMESTICEQUITY.signal" =  lag(ifelse(DOMESTICEQUITY.Close>=DOMESTICEQUITY.SMA,1,0)),
-  "GLOBALEQUITY.signal" =  lag(ifelse(GLOBALEQUITY.Close>=GLOBALEQUITY.SMA,1,0)),
-  "FIXEDINCOME.signal" =  lag(ifelse(FIXEDINCOME.Close>=FIXEDINCOME.SMA,1,0)),
-  "COMMODITIES.signal" =  lag(ifelse(COMMODITIES.Close>=COMMODITIES.SMA,1,0)),
-  "REALESTATE.signal" = lag(ifelse(REALESTATE.Close>=REALESTATE.SMA,1,0)),
-  "DOMESTICEQUITY.timingret" = ifelse(DOMESTICEQUITY.signal == 1,DOMESTICEQUITY.ret,RF.ret),
-  "GLOBALEQUITY.timingret" = ifelse(GLOBALEQUITY.signal == 1,GLOBALEQUITY.ret,RF.ret),
-  "FIXEDINCOME.timingret" = ifelse(FIXEDINCOME.signal == 1,FIXEDINCOME.ret,RF.ret),
-  "COMMODITIES.timingret" = ifelse(COMMODITIES.signal == 1,COMMODITIES.ret,RF.ret),
-  "REALESTATE.timingret" = ifelse(REALESTATE.signal == 1,REALESTATE.ret,RF.ret),
-  "GTAA.ret" = (DOMESTICEQUITY.timingret + GLOBALEQUITY.timingret + FIXEDINCOME.timingret + COMMODITIES.timingret + REALESTATE.timingret)/5,
-  "BUYANDHOLD.ret" = (DOMESTICEQUITY.ret + GLOBALEQUITY.ret + FIXEDINCOME.ret + COMMODITIES.ret + REALESTATE.ret)/5
+  "JALSH.SMA" =  rollmean(JALSH.Close,10,fill = 0,align = "right"),
+  "MSCIWORLD.SMA" =  rollmean(MSCIWORLD.Close,10,fill = 0,align = "right"),
+  "SA10YR.SMA" =  rollmean(SA10YR.Close,10,fill = 0,align = "right"),
+  "GSCI.SMA" =  rollmean(GSCI.Close,10,fill = 0,align = "right"),
+  #"JASPY.SMA" =  rollmean(JASPY.Close,10,fill = 0,align = "right"),
+  "JALSH.ret" =  c(0,diff(JALSH.Close)/lag(JALSH.Close)[-1]),
+  "MSCIWORLD.ret" =  c(0,diff(MSCIWORLD.Close)/lag(MSCIWORLD.Close)[-1]),
+  "SA10YR.ret" =  c(0,diff(SA10YR.Close)/lag(SA10YR.Close)[-1]),
+  "GSCI.ret" =  c(0,diff(GSCI.Close)/lag(GSCI.Close)[-1]),
+  #"JASPY.ret" =  c(0,diff(JASPY.Close)/lag(JASPY.Close)[-1]),
+  "RF.ret" =  lag((TBILLYIELDS/100)/12),
+  "JALSH.signal" =  lag(ifelse(JALSH.Close>=JALSH.SMA,1,0)),
+  "MSCIWORLD.signal" =  lag(ifelse(MSCIWORLD.Close>=MSCIWORLD.SMA,1,0)),
+  "SA10YR.signal" =  lag(ifelse(SA10YR.Close>=SA10YR.SMA,1,0)),
+  "GSCI.signal" =  lag(ifelse(GSCI.Close>=GSCI.SMA,1,0)),
+  #"JASPY.signal" = lag(ifelse(JASPY.Close>=JASPY.SMA,1,0)),
+  "JALSH.timingret" = ifelse(JALSH.signal == 1,JALSH.ret,RF.ret),
+  "MSCIWORLD.timingret" = ifelse(MSCIWORLD.signal == 1,MSCIWORLD.ret,RF.ret),
+  "SA10YR.timingret" = ifelse(SA10YR.signal == 1,SA10YR.ret,RF.ret),
+  "GSCI.timingret" = ifelse(GSCI.signal == 1,GSCI.ret,RF.ret),
+  #"JASPY.timingret" = ifelse(JASPY.signal == 1,JASPY.ret,RF.ret),
+  "GTAA.ret" = (JALSH.timingret + MSCIWORLD.timingret + SA10YR.timingret + GSCI.timingret)/4, # + JASPY.timingret)/5,
+  "BUYANDHOLD.ret" = (JALSH.ret + MSCIWORLD.ret + SA10YR.ret + GSCI.ret)/4 # + JASPY.ret)/5
 )
 
 rownames(AllAssets.df) <- index(AllAssets)
@@ -204,15 +208,17 @@ detach(package:dplyr)
 
 #### Individual Asset class charts buy and hold vs timing
 
+CHECK THIS!!!!!
+
 ```{r}
 #SubsetPeriod <- "2004-01-31::2016-12-31"
 #for calculating the sharpe ratio later
-Rf.ret <- Return.calculate(RISKFREE)[-1,]
+Rf.ret <- Return.calculate(TBILLYIELDS)[-1,]
 Rf.ret <- Rf.ret[SubsetPeriod]
 
-Returns <- cbind.xts(AllAssets.xts$DOMESTICEQUITY.ret, AllAssets.xts$DOMESTICEQUITY.timingret)[SubsetPeriod]
+Returns <- cbind.xts(AllAssets.xts$JALSH.ret, AllAssets.xts$JALSH.timingret)[SubsetPeriod]
 CumReturns <- 100*cumprod(1+Returns[-1,])
-colnames(CumReturns) <- c("Domestic Equity","Timing")
+colnames(CumReturns) <- c("JALSH","Timing")
 #how do i add earlier row and make it 100
 
 chart.TimeSeries(CumReturns,
@@ -237,9 +243,9 @@ chart.Drawdown(Returns,
 
 stats <- rbind(Return.annualized(Returns,scale = 12)*100, 
                StdDev.annualized(Returns,scale = 12)*100, 
-               SharpeRatio.annualized(Returns,Rf = Rf.ret$RISKFREE.Close),
+               SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLYIELDS.Close),
                maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
-               c(nrow(subset(Returns, Returns$GLOBALEQUITY.ret >= 0))/nrow(Returns),nrow(subset(Returns, Returns$GLOBALEQUITY.timingret >= 0))/nrow(Returns))*100)
+               c(nrow(subset(Returns, Returns$JALSH.ret >= 0))/nrow(Returns),nrow(subset(Returns, Returns$JALSH.timingret >= 0))/nrow(Returns))*100)
 
 colnames(stats) <- c("SA Domestic Equity","Timing")
 rownames(stats) <- c("Return","Volatility","Sharpe","MaxDD","% Positive Months")
@@ -249,7 +255,7 @@ round(stats,2)
 ####GTAA Performance Charts
 
 ```{r}
-SubsetPeriod <- "2004-06-30::2016-12-31" 
+SubsetPeriod <- "1971-12-31::2016-12-31" 
 Returns <- cbind.xts(AllAssets.xts$BUYANDHOLD.ret,AllAssets.xts$GTAA.ret)[SubsetPeriod]
 CumReturns <- 100*cumprod(1+Returns[-1,])
 colnames(CumReturns) <- c("Buy & Hold","GTAA")
@@ -260,7 +266,7 @@ chart.TimeSeries(CumReturns["1973-01-31::2016-12-31"],
   colorset = c(4,2),
   ylab = "",
   ylog = TRUE,
-  ylim = c(100,500),
+  #ylim = c(100,500),
   legend.loc = "left",
   major.ticks = "years",
   minor.ticks = FALSE)
@@ -271,7 +277,7 @@ chart.TimeSeries(CumReturns["1973-01-31::2016-12-31"],
   colorset = c(4,2),
   ylab = "",
   ylog = FALSE,
-  ylim = c(100,500),
+  #ylim = c(100,500),
   legend.loc = "left",
   major.ticks = "years",
   minor.ticks = FALSE)
@@ -281,9 +287,9 @@ need proper yield curve!
 how does this compare to USA?
 
 ```{r}
-#SubsetPeriod <- "1973-01-31::2012-12-31" 
+SubsetPeriod <- "1973-01-31::2012-12-31" 
 
-Rf.ret <- Return.calculate(RISKFREE)[-1,]
+Rf.ret <- Return.calculate(TBILLS)[-1,]
 Rf.ret <- Rf.ret[SubsetPeriod]
 
 
@@ -291,10 +297,10 @@ Returns <- cbind.xts(AllAssets.xts$BUYANDHOLD.ret,AllAssets.xts$GTAA.ret)[Subset
 
 stats <- rbind(100*Return.annualized(Returns,scale = 12), 
                100*StdDev.annualized(Returns,scale = 12), 
-               SharpeRatio.annualized(Returns,Rf = Rf.ret$RISKFREE.Close),
+               SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLS.Close),
                SortinoRatio(Returns, MAR = 0),
                100*maxDrawdown(Returns,invert = FALSE),
-               100*c(Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod],scale = 12))
+               100*c(Return.annualized(Return.calculate(Cl(SACPI))[SubsetPeriod],scale = 12))
                )
 
 colnames(stats) <- c("Buy & Hold","GTAA")
