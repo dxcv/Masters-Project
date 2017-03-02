@@ -1,0 +1,707 @@
+---
+title: "Replication of Faber's A Quantitative Approach to Tactical Asset Allocation - Asset Class Returns"
+output: html_notebook
+---
+
+####Importing the data into R
+
+Each asset's class price series has been saved as a CSV. The packages used for performance analysis and backtesting require the data to be xts objects which are created by the following code.
+```{r, message=FALSE}
+#remove past data
+rm(list = ls(envir = globalenv()),envir = globalenv()) #clear Vars from global enviroment
+
+#load required packages
+library(PerformanceAnalytics)
+library(quantstrat)
+
+#declare symbols
+symbols <- c("TBILLS","SP500","EAFE","US10YR","GSCI","NAREIT","CPI")
+
+#use quantmod function to load data as xts objects
+getSymbols(symbols,
+           src = "csv",
+           dir="../Data/CSV files",
+           col.names=c("Close"))
+```
+
+
+#### Calculating asset class returns and replicating the chart in Faber's Figure 3
+
+Once the data is loaded i can create one xts object for the prices and calculate each asset class's returns. The asset class returns are then charted to replicate figure 3 on page 16.
+```{r}
+#combine all closing prices into one xts file
+AllAssets <- cbind.xts(Cl(TBILLS),
+                       Cl(SP500),
+                       Cl(EAFE),
+                       Cl(US10YR),
+                       Cl(GSCI),
+                       Cl(NAREIT),
+                       Cl(CPI))                       
+
+SubsetPeriod <- "1972-12-31::2016-12-31"
+
+#subset to required period
+AllAssets <- AllAssets[SubsetPeriod]
+colnames(AllAssets) <- symbols
+
+#calculate returns and cum returns
+AllAssets.ret <- Return.calculate(AllAssets)[-1,]
+AllAssets.cumret <- 100*cumprod(1+ ROC(AllAssets, type = "discrete")[-1,])
+
+#chart returns
+chart.TimeSeries(AllAssets.cumret[SubsetPeriod],
+  main = paste("Asset Class Returns ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Log Scale",sep = ""), 
+  #lty = "2",
+  ylab = "",
+  ylog = TRUE,
+  ylim = c(40,6100),
+  date.format = "%Y",
+  major.ticks = "years",
+  legend.loc = "topleft",
+  colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue"), #create own colorset at some point
+  minor.ticks =FALSE)
+```
+
+### Focusing on the last 14 years of returns
+
+The same code can be manipulated to calculate asset class returns focusing on the most recent years
+```{r}
+#subset to required period
+SubsetPeriod <- "2006-12-31::2016-12-31"
+AllAssets2 <- AllAssets[SubsetPeriod]
+
+#calculate returns and cum returns
+AllAssets2.ret <- Return.calculate(AllAssets2)[-1,]
+AllAssets2.cumret <- 100*cumprod(1+ ROC(AllAssets2, type = "discrete")[-1,])
+
+#chart
+chart.TimeSeries(AllAssets2.cumret,
+  main = paste("Asset Class Returns ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Non-log Scale",sep = ""),
+  ylab = "",
+  ylog = FALSE,
+  #ylim = c(0,300),
+  date.format = "%Y",
+  major.ticks = "years",
+  legend.loc = "topleft",
+  colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue"),
+  minor.ticks =FALSE)
+```
+
+####Analysing asset class returns, max drawdowns and other performance statistics
+
+Using the package performance analytics, common performance statistics such as CAGR, volatility and sharpe ratios can be calculated. This code replicates Faber's figure 4 on page 17
+```{r}
+#subset to required dates
+
+#Create xts for Returns
+SubsetPeriod <- "2006-12-31::2016-12-31"
+Returns <- AllAssets.ret[SubsetPeriod]
+
+#calculate statistics and store as "stats"
+stats <- rbind(100*Return.annualized(Returns,scale = 12), 
+               100*StdDev.annualized(Returns,scale = 12), 
+               SharpeRatio.annualized(Returns,Rf = AllAssets.ret$TBILLS),
+               100*maxDrawdown(Returns,scale = 12,invert = FALSE),
+               100*c(Return.annualized(Returns$CPI,scale = 12)))
+
+#rename table rows/column names and format
+colnames(stats) <- symbols
+rownames(stats) <- c("Return","Volatility",paste("Sharpe (",round(stats[1,"TBILLS"],2),"%)", sep = ""),"MaxDD","Inflation CAGR")
+stats <- round(stats[,-7],2)
+```
+
+Lets print the stats:
+```{r, echo=FALSE}
+stats
+
+#copies stats to clipboad for pasting into word/excel
+write.table(stats, "clipboard", sep="\t", col.names=NA) 
+```
+
+sharpe ratios dont look right
+
+```{r}
+
+#Create xts for Returns
+SubsetPeriod <- "1996-12-31::2016-12-31"
+Returns <- AllAssets.ret[SubsetPeriod]
+
+chart.RollingCorrelation(Returns$GSCI,
+                         Returns$SP500, 
+                         width = 24,
+                         #legend.loc = "bottomleft"
+                         main = "GSCI to SP500 Rolling 2 year correlations"
+)
+```
+
+now look at GTAA and buy hold (chart and return stats)
+- with/without commodites 1972-2016
+- with/without commodities 2002-2016
+
+####Managing Risk 
+
+Lets chart each asset with its 10 month simple moving average
+
+```{r}
+myChart_Theme <- chart_theme() #Create a chart_theme
+myChart_Theme$col$line.col <- "blue"
+
+SMAperiod <- 10
+
+SubsetPeriod <- "1972-12-31::2016-12-31"
+chart_Series(Cl(GSCI),
+  name = paste("GSCI vs 10 Month Simple Moving Average",sep = ""),
+  theme=myChart_Theme,
+  type = "line",
+  subset = SubsetPeriod,
+  TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
+  )
+```
+
+```{r}
+SubsetPeriod <- "1996-12-31::2016-12-31"
+chart_Series(Cl(GSCI),
+  name = paste("GSCI vs 10 Month Simple Moving Average",sep = ""),
+  theme=myChart_Theme,
+  type = "line",
+  subset = SubsetPeriod,
+  TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
+  )
+```
+
+####Calculating returns
+ 
+```{r, message=FALSE, warning=FALSE}
+#also load TBILL YIELDS
+getSymbols("TBILLYIELDS",
+  src = "csv",
+  dir="../Data/CSV files",
+  col.names=c("Close"))
+
+library(dplyr)
+
+AllAssets <- cbind.xts(Cl(GSCI),
+                       Cl(TBILLYIELDS))    
+
+#create dataframe - tidyverse not compatible with xts?
+AllAssets.df <- data.frame(date=index(AllAssets), coredata(AllAssets)) #, row.names = index(AllAssets))
+
+#mutate new columns
+AllAssets.df  <- mutate(AllAssets.df, 
+  "10mSMA" = rollmean(GSCI.Close,10,fill = 0,align = "right"),
+  "GSCI.ret" = c(0,diff(GSCI.Close)/lag(GSCI.Close)[-1]),
+  "Rf.ret" = lag((TBILLYIELDS.Close/100)/12),
+  "signal" = lag(ifelse(GSCI.Close>`10mSMA`,1,0)),
+  "Timing.ret" = ifelse(signal == 1,GSCI.ret,Rf.ret) 
+)
+rownames(AllAssets.df) <- index(AllAssets)
+
+#detach the packagae dplyr as it isn't compatible with other packages?
+detach(package:dplyr)
+```
+
+####Calculating Stats 1972-2016
+
+```{r}
+SubsetPeriod <- "1972-12-31::2016-12-31"
+AllAssets <- as.xts(AllAssets.df[,-1])
+Returns <- cbind.xts(AllAssets$GSCI.ret, AllAssets$Timing.ret)[SubsetPeriod]
+colnames(Returns) <- c("Buy and Hold","Timing")
+
+#for calculating the sharpe ratio later
+Rf.ret <- Return.calculate(TBILLS)[-1,]
+Rf.ret <- Rf.ret[SubsetPeriod]
+
+#create Cum returns for the chart
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c("Buy and Hold","Timing")
+```
+
+####Chart the returns
+
+```{r}
+chart.TimeSeries(CumReturns,
+  main = paste("GSCI Buy and Hold vs Timing Model ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Log Scale",sep = ""),
+  date.format = "%Y",
+  colorset = c(4,2),
+  ylab = "",
+  ylog = TRUE,
+  ylim = c(50,7500),
+  legend.loc = "left",
+  major.ticks = "years",
+  minor.ticks = FALSE)
+```
+
+####Drawdown chart
+
+
+```{r}
+chart.Drawdown(Returns,
+  main = paste("GSCI Buy and Hold vs Timing Model Drawdowns ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Non-log Scale",sep = ""),
+  date.format = "%Y",
+  colorset = c(4,2),
+  ylab = "Drawdown",
+  legend.loc = "bottom",
+  major.ticks = "years",
+  minor.ticks = FALSE)
+```
+
+```{r}
+stats <- rbind(Return.annualized(Returns,scale = 12)*100, 
+               StdDev.annualized(Returns,scale = 12)*100, 
+               SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLS.Close),
+               maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
+               c(nrow(subset(Returns, Returns$asset >= 0))/nrow(Returns),nrow(subset(Returns, Returns$Timing.ret >= 0))/nrow(Returns))*100)
+
+colnames(stats) <- c("GSCI Buy and Hold","TIMING")
+rownames(stats) <- c("Return","Volatility","Sharpe","MaxDD","% Positive Months")
+round(stats,2)
+
+```
+
+####Chart Rolling Performance
+
+```{r}
+charts.RollingPerformance(Returns, 
+                          main = "GSCI Buy and Hold  vs Timing Total Returns (1996-2016)",
+                          date.format = "%Y",
+                          colorset = c(4,2),
+                          ylog = FALSE,
+                          minor.ticks =FALSE)
+```
+
+
+####Calculating Stats 1996-2016
+
+```{r}
+SubsetPeriod <- "1996-12-31::2016-12-31"
+AllAssets <- as.xts(AllAssets.df[,-1])
+Returns <- cbind.xts(AllAssets$GSCI.ret, AllAssets$Timing.ret)[SubsetPeriod]
+colnames(Returns) <- c("Buy and Hold","Timing")
+
+#for calculating the sharpe ratio later
+Rf.ret <- Return.calculate(TBILLS)[-1,]
+Rf.ret <- Rf.ret[SubsetPeriod]
+
+#create Cum returns for the chart
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c("Buy and Hold","Timing")
+```
+
+####Chart the returns
+
+```{r}
+chart.TimeSeries(CumReturns,
+  main = paste("GSCI Buy and Hold vs Timing Model ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Log Scale",sep = ""),
+  date.format = "%Y",
+  colorset = c(4,2),
+  ylab = "",
+  ylog = TRUE,
+  #ylim = c(50,7500),
+  legend.loc = "left",
+  major.ticks = "years",
+  minor.ticks = FALSE)
+```
+
+####Drawdown chart
+
+
+```{r}
+chart.Drawdown(Returns,
+  main = paste("GSCI Buy and Hold vs Timing Model Drawdowns ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Non-log Scale",sep = ""),
+  date.format = "%Y",
+  colorset = c(4,2),
+  ylab = "Drawdown",
+  legend.loc = "bottom",
+  major.ticks = "years",
+  minor.ticks = FALSE)
+```
+
+```{r}
+stats <- rbind(Return.annualized(Returns,scale = 12)*100, 
+               StdDev.annualized(Returns,scale = 12)*100, 
+               SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLS.Close),
+               maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
+               c(nrow(subset(Returns, Returns$asset >= 0))/nrow(Returns),nrow(subset(Returns, Returns$Timing.ret >= 0))/nrow(Returns))*100)
+
+colnames(stats) <- c("GSCI Buy and Hold","TIMING")
+rownames(stats) <- c("Return","Volatility","Sharpe","MaxDD","% Positive Months")
+round(stats,2)
+```
+
+####Chart Rolling Performance
+
+```{r}
+charts.RollingPerformance(Returns, 
+                          main = "GSCI Buy and Hold vs Timing Total Returns (1996-2016)",
+                          date.format = "%Y",
+                          colorset = c(4,2),
+                          ylog = FALSE,
+                          minor.ticks =FALSE)
+```
+tests
+
+```{r}
+#chart.Histogram(Returns)
+#skewness(Returns)
+#kurtosis(Returns)
+#Returns$'Buy and Hold'
+#chart.RelativePerformance(Returns$'Buy and Hold',Returns$'TIMING')
+```
+
+#### GTAA
+
+```{r, message=FALSE, warning=TRUE, include=FALSE}
+#Load the required packages
+#library(PerformanceAnalytics)
+#library(quantmod)
+#library(dplyr)
+#library(ggplot2)
+
+#Set the symbols required
+#symbols <- c("TBILLS","SP500","EAFE","US10YR","GSCI","NAREIT","CPI","TBILLYIELDS")
+
+#Load the data
+#getSymbols(symbols,
+#           src = "csv",
+#           dir="../Data/CSV files",
+#           col.names=c("Close"))
+```
+
+```{r}
+library(dplyr)
+#Create an xts of all assets' prices
+AssetPrices <- cbind.xts(Cl(SP500),
+                         Cl(EAFE),
+                         Cl(US10YR),
+                         #Cl(GSCI),
+                         Cl(NAREIT),
+                         Cl(TBILLYIELDS))
+
+AssetPrices <- AssetPrices["1972-01-31::2016-12-31"]
+
+#Create dataframe to perform calculations (seems tidyverse not compatible with xts?)
+TimingModelCalcs <- data.frame(date=index(AssetPrices), coredata(AssetPrices))
+TimingModelCalcs  <- mutate(TimingModelCalcs,
+  "SP500.SMA" =  rollmean(SP500.Close,10,fill = 0,align = "right"),
+  "EAFE.SMA" =  rollmean(EAFE.Close,10,fill = 0,align = "right"),
+  "US10YR.SMA" =  rollmean(US10YR.Close,10,fill = 0,align = "right"),
+  #"GSCI.SMA" =  rollmean(GSCI.Close,10,fill = 0,align = "right"),
+  "NAREIT.SMA" =  rollmean(NAREIT.Close,10,fill = 0,align = "right"),
+  "SP500.ret" =  c(0,diff(SP500.Close)/lag(SP500.Close)[-1]),
+  "EAFE.ret" =  c(0,diff(EAFE.Close)/lag(EAFE.Close)[-1]),
+  "US10YR.ret" =  c(0,diff(US10YR.Close)/lag(US10YR.Close)[-1]),
+  #"GSCI.ret" =  c(0,diff(GSCI.Close)/lag(GSCI.Close)[-1]),
+  "NAREIT.ret" =  c(0,diff(NAREIT.Close)/lag(NAREIT.Close)[-1]),
+  "RF.ret" =  lag((TBILLYIELDS.Close/100)/12),
+  "SP500.signal" =  lag(ifelse(SP500.Close>=SP500.SMA,1,0)),
+  "EAFE.signal" =  lag(ifelse(EAFE.Close>=EAFE.SMA,1,0)),
+  "US10YR.signal" =  lag(ifelse(US10YR.Close>=US10YR.SMA,1,0)),
+  #"GSCI.signal" =  lag(ifelse(GSCI.Close>=GSCI.SMA,1,0)),
+  "NAREIT.signal" = lag(ifelse(NAREIT.Close>=NAREIT.SMA,1,0)),
+  "SP500.timingret" = ifelse(SP500.signal == 1,SP500.ret,RF.ret),
+  "EAFE.timingret" = ifelse(EAFE.signal == 1,EAFE.ret,RF.ret),
+  "US10YR.timingret" = ifelse(US10YR.signal == 1,US10YR.ret,RF.ret),
+  #"GSCI.timingret" = ifelse(GSCI.signal == 1,GSCI.ret,RF.ret),
+  "NAREIT.timingret" = ifelse(NAREIT.signal == 1,NAREIT.ret,RF.ret),
+  "GTAA.ret" = (SP500.timingret + EAFE.timingret + US10YR.timingret + NAREIT.timingret)/4,
+  "BUYANDHOLD.ret" = (SP500.ret + EAFE.ret + US10YR.ret  + NAREIT.ret)/4
+)
+
+#Create xts of calculations to analyse performance
+TimingModelCalcs.xts <- xts(TimingModelCalcs[,-1], order.by = TimingModelCalcs$date)
+```
+
+#### Time invested
+
+```{r}
+# TimeInvestedCalcs <- transmute(TimingModelCalcs,
+#   "Date" = date,
+#   "AssetsInvested" =  SP500.signal +  EAFE.signal + US10YR.signal + GSCI.signal + NAREIT.signal
+# )
+# 
+# TimeInvestedCalcs.xts <- xts(TimeInvestedCalcs[,-1], order.by = TimeInvestedCalcs$Date)
+# 
+# SubsetPeriod <- "1972-12-31::2012-12-31"
+# TimeInvestedCalcs.xts <- TimeInvestedCalcs.xts[SubsetPeriod]
+# 
+# #Tabulate and turn into data.frame
+# TimeInvestedStats <- as.data.frame(table(TimeInvestedCalcs.xts))
+# TimeInvestedStats <- transform(TimeInvestedStats,
+#                   "Percentage of Months" = prop.table(Freq))
+# 
+# colnames(TimeInvestedStats) <- c("Number of Positions","# of Months","% of Months")
+# TimeInvestedStats$`% of Months` <- round(TimeInvestedStats$`% of Months`,4)*100
+# rownames(TimeInvestedStats) <- c("0% Invested (all cash)",
+#                                  "20% Invested",
+#                                  "40% Invested",
+#                                  "60% Invested",
+#                                  "80% Invested",
+#                                  "100% Invested (fully invested)")
+# 
+# paste("On average the investor is ",
+#       round(20*sum(c(0,1,2,3,4,5) * TimeInvestedStats$`# of Months`) / sum(TimeInvestedStats$`# of Months`),2),
+#       "% invested", sep ="")
+# 
+# TimeInvestedStats
+# write.table(TimeInvestedStats, "clipboard", sep="\t", col.names=NA) #copies to clipboad for word/excel
+# 
+# SubsetPeriod <- "1972-12-31::2012-12-31"
+# chartdata.xts <- TimingModelCalcs.xts[SubsetPeriod]
+# chartdata.xts <- chartdata.xts[,c(0,18:22)]
+# chartdata.xts$total = c(0)
+# chartdata.xts$total = with(chartdata.xts,SP500.signal + EAFE.signal + US10YR.signal + NAREIT.signal + GSCI.signal)
+# 
+# plot.xts(chartdata.xts,
+#          multi.panel = TRUE,
+#          major.ticks = "years",
+#          grid.ticks.on = "years",
+#          yaxis.same = FALSE,
+#          main="",
+#          col = c("olivedrab","slateblue","cornflowerblue","gold2","orangered3","blue","dodgerblue2"))
+# 
+# #todo use ggplot to make better looking chart!
+```
+
+* do just for GSCI
+
+####Performance Charts
+
+```{r}
+SubsetPeriod <- "1973-01-31::2016-12-31" 
+Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c("Buy & Hold","GTAA")
+
+chart.TimeSeries(CumReturns["1973-01-31::2016-12-31"],
+                 main = "Buy & Hold vs Timing Model, 1973-2016, log scale",
+                 date.format = "%Y",
+                 colorset = c(4,2),
+                 ylab = "",
+                 ylog = TRUE,
+                 ylim = c(80,6000),
+                 legend.loc = "left",
+                 major.ticks = "years",
+                 minor.ticks = FALSE)
+
+chart.TimeSeries(CumReturns["1973-01-31::2016-12-31"],
+                 main = "Buy & Hold vs Timing Model, 1973-2016, non-log scale",
+                 date.format = "%Y",
+                 colorset = c(4,2),
+                 ylab = "",
+                 ylog = FALSE,
+                 ylim = c(80,6000),
+                 legend.loc = "left",
+                 major.ticks = "years",
+                 minor.ticks = FALSE)
+
+chart.TimeSeries(CumReturns["2007-01-31::2016-12-31"],
+                 main = "Buy & Hold vs Timing Model, 2007-2016, log scale",
+                 date.format = "%Y",
+                 colorset = c(4,2),
+                 ylab = "",
+                 ylog = TRUE,
+                 ylim = c(80,6000),
+                 legend.loc = "left",
+                 major.ticks = "years",
+                 minor.ticks = FALSE)
+
+chart.TimeSeries(CumReturns["2007-01-31::2016-12-31"],
+                 main = "Buy & Hold vs Timing Model, 2007-2016, non-log scale",
+                 date.format = "%Y",
+                 colorset = c(4,2),
+                 ylab = "",
+                 ylog = FALSE,
+                 ylim = c(80,6300),
+                 legend.loc = "left",
+                 major.ticks = "years",
+                 minor.ticks = FALSE)
+
+SubsetPeriod <- "2007-01-31::2016-12-31" 
+Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c("Buy & Hold","GTAA")
+
+chart.TimeSeries(CumReturns,
+                 main = "Buy & Hold vs Timing Model, 2006-2016, non-log scale",
+                 date.format = "%Y",
+                 colorset = c(4,2),
+                 ylab = "",
+                 ylog = FALSE,
+                 #ylim = c(80,240),
+                 legend.loc = "topleft",
+                 major.ticks = "years",
+                 minor.ticks = FALSE)
+```
+
+```{r}
+SubsetPeriod <- "1973-01-31::2016-12-31" 
+Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
+
+stats <- rbind(100*Return.annualized(Returns,scale = 12), 
+               100*StdDev.annualized(Returns,scale = 12), 
+               SharpeRatio.annualized(Returns,Rf = 0.0541/12),
+               100*maxDrawdown(Returns,invert = FALSE),
+               100*c(Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod],scale = 12))
+               )
+
+colnames(stats) <- c("Buy & Hold","GTAA")
+rownames(stats) <- c("Return","Volatility","Sharpe","MaxDD","Inflation CAGR")
+round(stats,2)
+write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
+```
+
+
+```{r}
+SubsetPeriod <- "2007-01-31::2016-12-31" 
+Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
+
+stats <- rbind(100*Return.annualized(Returns,scale = 12), 
+               100*StdDev.annualized(Returns,scale = 12), 
+               SharpeRatio.annualized(Returns,Rf = 0.0541/12),
+               100*maxDrawdown(Returns,invert = FALSE),
+               100*c(Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod],scale = 12))
+               )
+
+colnames(stats) <- c("Buy & Hold","GTAA")
+rownames(stats) <- c("Return","Volatility","Sharpe","MaxDD","Inflation CAGR")
+round(stats,2)
+write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
+```
+
+
+### Yearly Returns
+
+```{r}
+SubsetPeriod <- "2006-12-31::2012-12-31" 
+Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
+YearlyReturns <- cbind.xts(yearlyReturn(100*cumprod(1+TimingModelCalcs.xts$BUYANDHOLD.ret[SubsetPeriod])),
+                           yearlyReturn(100*cumprod(1+TimingModelCalcs.xts$GTAA.ret[SubsetPeriod])))[-1,]
+
+colnames(YearlyReturns) <- c("Buy & Hold","GTAA")
+
+round(100*YearlyReturns,2)
+
+YearlyStats <- rbind(Return.annualized(YearlyReturns)*100, 
+               StdDev.annualized(YearlyReturns)*100, 
+               SharpeRatio.annualized(YearlyReturns,Rf = 0.0541),
+               maxDrawdown(YearlyReturns,invert = FALSE)*100,
+               c(100*Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod],scale = 12))
+               )
+
+round(YearlyStats,2)
+```
+
+
+
+```{r}
+SubsetPeriod <- "2007-01-31::2016-12-31"
+Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
+
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c("Buy & Hold","GTAA")
+
+chart.TimeSeries(CumReturns,
+                 main = "Buy & Hold vs Timing Model, 2006-2016, non-log scale",
+                 date.format = "%Y",
+                 colorset = c(4,2),
+                 ylab = "",
+                 ylog = FALSE,
+                 #ylim = c(75,125),
+                 legend.loc = "topleft",
+                 major.ticks = "years",
+                 minor.ticks = FALSE)
+
+chart.Drawdown(Returns,
+                 main = "Buy & Hold vs Timing Model Drawdowns, 2006-2016",
+                 date.format = "%Y",
+                 colorset = c(4,2),
+                 ylab = "Drawdown",
+                 legend.loc = "left",
+                 major.ticks = "years",
+                 minor.ticks = FALSE)
+```
+
+```{r}
+SubsetPeriod <- "1973-01-31::2016-12-31"
+Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
+
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c("Buy & Hold","GTAA")
+colnames(Returns) <- c("Buy & Hold","GTAA")
+chart.TimeSeries(CumReturns,
+                 main = "Buy & Hold vs Timing Model, 1973-2016, non-log scale",
+                 date.format = "%Y",
+                 colorset = c(4,2),
+                 ylab = "",
+                 ylog = FALSE,
+                 ylim = c(80,6500),
+                 legend.loc = "left",
+                 major.ticks = "years",
+                 minor.ticks = FALSE)
+```
+
+
+```{r}
+chart.Drawdown(Returns,
+                 main = "Buy & Hold vs Timing Model Drawdowns, 1973-2016",
+                 date.format = "%Y",
+                 colorset = c(4,2),
+                 ylab = "Drawdown",
+                 legend.loc = "left",
+                 major.ticks = "years",
+                 minor.ticks = FALSE)
+
+```
+
+
+#### Yearly Returns since 2012
+```{r}
+SubsetPeriod <- "2012-12-31::2016-12-31" 
+Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
+YearlyReturns <- cbind.xts(yearlyReturn(100*cumprod(1+TimingModelCalcs.xts$BUYANDHOLD.ret[SubsetPeriod])),
+                           yearlyReturn(100*cumprod(1+TimingModelCalcs.xts$GTAA.ret[SubsetPeriod])))[-1,]
+
+colnames(YearlyReturns) <- c("Buy & Hold","GTAA")
+round(100*YearlyReturns,2)
+```
+
+#### Monthly Performance Stats since 2012
+
+```{r}
+SubsetPeriod <- "2013-01-31::2016-12-31"
+Returns <- cbind.xts(TimingModelCalcs.xts$BUYANDHOLD.ret,TimingModelCalcs.xts$GTAA.ret)[SubsetPeriod]
+
+stats <- rbind(Return.annualized(Returns,scale = 12)*100, 
+               StdDev.annualized(Returns,scale = 12)*100, 
+               SharpeRatio.annualized(Returns,Rf = 0.0541/12),
+               maxDrawdown(Returns,invert = FALSE)*100,
+               c(100*Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod],scale = 12))
+               )
+colnames(stats) <- c("Buy & Hold","GTAA")
+rownames(stats) <- c("Return","Volatility","Sharpe","MaxDD","Inflation CAGR")
+round(stats,2)
+```
+
+Summary
+
+* THE GTAA timing strategy continued to perform as it has in the past relative to the Buy and Hold strategy.
+** From 2013 to 2016, although returns were slightly worse than the Buy and Hold there were with much less volatility and lower drawdowns.
+
+```{r}
+table.Drawdowns(Returns)
+table.Drawdowns(Returns$GTAA.ret)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
