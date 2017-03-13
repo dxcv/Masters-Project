@@ -96,7 +96,10 @@ AllAssets2 <- AllAssets[SubsetPeriod]
 AllAssets2.ret <- Return.calculate(AllAssets2)[-1,]
 AllAssets2.cumret <- 100*cumprod(1+ ROC(AllAssets2, type = "discrete")[-1,])
 
-#chart
+#change first value to 100 - WORK OUT HOW TO ADD ADDITIONAL DATA POINT FOR 2012-12-31
+AllAssets2.cumret[1:1,] <- c(100)
+
+#chart - work out how to change x axis to 2017?
 chart.TimeSeries(AllAssets2.cumret,
   main = paste("Figure 3 - Asset Class Returns ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Non-log Scale",sep = ""),
   ylab = "",
