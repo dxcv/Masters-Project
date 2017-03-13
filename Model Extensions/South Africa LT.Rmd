@@ -3,6 +3,8 @@ title: "Replication of Faber's A Quantitative Approach to Tactical Asset Allocat
 output: html_notebook
 ---
 
+delete 
+
 ####Importing the data into R
 
 Each asset's class price series has been saved as a CSV. The packages used for performance analysis and backtesting require the data to be xts objects which are created by the following code.
