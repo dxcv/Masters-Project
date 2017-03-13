@@ -1,5 +1,5 @@
 ---
-title: "Replication of Faber's A Quantitative Approach to Tactical Asset Allocation - Asset Class Returns"
+title: "A Quantitative Approach to Tactical Asset Allocation in South Africa"
 output: html_notebook
 ---
 
@@ -23,35 +23,32 @@ getSymbols(symbols,
            src = "csv",
            dir="../Data/CSV files/SA Long Term/",
            col.names=c("Close"))
-```
 
-#### Calculating asset class returns and charting
-
-Once the data is loaded we can create one xts object for the prices and calculate each asset class's returns. The asset class returns are then charted.
-```{r}
+#create an object with all assets to calculate returns
 AllAssets <- cbind.xts(Cl(TBILLS),
                        Cl(JALSH),
                        Cl(MSCIWORLD),
                        Cl(SA10YR),
                        Cl(GSCI),
-                       #Cl(JSAPY),
+                       Cl(JASPY),
                        Cl(SACPI))                       
 
 #subset to required period
-SubsetPeriod <- "1971-01-30::2016-12-31"
+SubsetPeriod <- "1992-12-31::2016-12-31"
 
 AllAssets <- AllAssets[SubsetPeriod]
-colnames(AllAssets) <- symbols[-6]
+colnames(AllAssets) <- symbols
 
 #calculate returns and cum returns
 AllAssets.ret <- Return.calculate(AllAssets)[-1,]
 AllAssets.cumret <- 100*cumprod(1+ ROC(AllAssets, type = "discrete")[-1,])
 
+#chart
 chart.TimeSeries(AllAssets.cumret[SubsetPeriod],
  main = paste("Figure X - SA Asset Class Returns ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Log Scale",sep = ""), 
  ylab = "",
  ylog = TRUE,
- ylim = c(100,200000),
+ #ylim = c(100,200000),
  date.format = "%Y",
  major.ticks = "years",
  legend.loc = "topleft",
@@ -61,10 +58,9 @@ chart.TimeSeries(AllAssets.cumret[SubsetPeriod],
 
 ####Analysing asset class returns, max drawdowns and other performance statistics
 
-Using the package performance analytics, common performance statistics such as CAGR, volatility and sharpe ratios can be calculated.
 ```{r}
 #subset to required dates
-#SubsetPeriod <- "1972-12-31::2016-12-31"
+SubsetPeriod <- "1992-12-31::2016-12-31"
 
 #Create xts for Returns
 Returns <- AllAssets.ret[SubsetPeriod]
@@ -77,13 +73,10 @@ stats <- rbind(100*Return.annualized(Returns,scale = 12),
                100*c(Return.annualized(Returns$SACPI,scale = 12)))
 
 #rename table rows/column names and format
-colnames(stats) <- symbols[-6]
+colnames(stats) <- symbols
 rownames(stats) <- c("Return","Volatility",paste("Sharpe (",round(stats[1,"TBILLS"],2),"%)", sep = ""),"MaxDD","Inflation CAGR")
 stats <- round(stats[,-7],2)
-```
 
-Lets print the stats:
-```{r, echo=FALSE}
 stats
 
 #copies stats to clipboad for pasting into word/excel
@@ -132,13 +125,13 @@ chart_Series(Cl(GSCI),
   TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
   )
 
-# chart_Series(Cl(JSAPY),
-#   name = paste("JSAPY vs 10 Month Simple Moving Average",sep = ""),
-#   theme=myChart_Theme,
-#   type = "line",
-#   subset = SubsetPeriod,
-#   TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
-#   )
+chart_Series(Cl(JASPY),
+   name = paste("JSAPY vs 10 Month Simple Moving Average",sep = ""),
+   theme=myChart_Theme,
+   type = "line",
+   subset = SubsetPeriod,
+   TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
+   )
 
 #change to other chart so can make it log?
 ```
@@ -146,14 +139,12 @@ chart_Series(Cl(GSCI),
 ####Calculating returns
 
 ```{r, message=FALSE, warning=FALSE}
-
 #Import saved pricing data csv files as xts
 getSymbols("TBILLYIELDS",
            src = "csv",
            dir="../Data/CSV files/SA Long Term/",
            col.names=c("Close"))
 TBILLYIELDS <- TBILLYIELDS[SubsetPeriod]
-
 
 #load an additional library
 library(dplyr)
@@ -163,7 +154,7 @@ AllAssets <- cbind.xts(Cl(JALSH),
                        Cl(MSCIWORLD),
                        Cl(SA10YR),
                        Cl(GSCI),
-                       #Cl(JASPY),
+                       Cl(JASPY),
                        Cl(TBILLYIELDS))   
 
 AllAssets <- AllAssets[SubsetPeriod]
@@ -177,25 +168,25 @@ AllAssets.df  <- mutate(AllAssets.df,
   "MSCIWORLD.SMA" =  rollmean(MSCIWORLD.Close,10,fill = 0,align = "right"),
   "SA10YR.SMA" =  rollmean(SA10YR.Close,10,fill = 0,align = "right"),
   "GSCI.SMA" =  rollmean(GSCI.Close,10,fill = 0,align = "right"),
-  #"JASPY.SMA" =  rollmean(JASPY.Close,10,fill = 0,align = "right"),
+  "JASPY.SMA" =  rollmean(JASPY.Close,10,fill = 0,align = "right"),
   "JALSH.ret" =  c(0,diff(JALSH.Close)/lag(JALSH.Close)[-1]),
   "MSCIWORLD.ret" =  c(0,diff(MSCIWORLD.Close)/lag(MSCIWORLD.Close)[-1]),
   "SA10YR.ret" =  c(0,diff(SA10YR.Close)/lag(SA10YR.Close)[-1]),
   "GSCI.ret" =  c(0,diff(GSCI.Close)/lag(GSCI.Close)[-1]),
-  #"JASPY.ret" =  c(0,diff(JASPY.Close)/lag(JASPY.Close)[-1]),
+  "JASPY.ret" =  c(0,diff(JASPY.Close)/lag(JASPY.Close)[-1]),
   "RF.ret" =  lag((TBILLYIELDS/100)/12),
   "JALSH.signal" =  lag(ifelse(JALSH.Close>=JALSH.SMA,1,0)),
   "MSCIWORLD.signal" =  lag(ifelse(MSCIWORLD.Close>=MSCIWORLD.SMA,1,0)),
   "SA10YR.signal" =  lag(ifelse(SA10YR.Close>=SA10YR.SMA,1,0)),
   "GSCI.signal" =  lag(ifelse(GSCI.Close>=GSCI.SMA,1,0)),
-  #"JASPY.signal" = lag(ifelse(JASPY.Close>=JASPY.SMA,1,0)),
+  "JASPY.signal" = lag(ifelse(JASPY.Close>=JASPY.SMA,1,0)),
   "JALSH.timingret" = ifelse(JALSH.signal == 1,JALSH.ret,RF.ret),
   "MSCIWORLD.timingret" = ifelse(MSCIWORLD.signal == 1,MSCIWORLD.ret,RF.ret),
   "SA10YR.timingret" = ifelse(SA10YR.signal == 1,SA10YR.ret,RF.ret),
   "GSCI.timingret" = ifelse(GSCI.signal == 1,GSCI.ret,RF.ret),
-  #"JASPY.timingret" = ifelse(JASPY.signal == 1,JASPY.ret,RF.ret),
-  "GTAA.ret" = (JALSH.timingret + MSCIWORLD.timingret + SA10YR.timingret + GSCI.timingret)/4, # + JASPY.timingret)/5,
-  "BUYANDHOLD.ret" = (JALSH.ret + MSCIWORLD.ret + SA10YR.ret + GSCI.ret)/4 # + JASPY.ret)/5
+  "JASPY.timingret" = ifelse(JASPY.signal == 1,JASPY.ret,RF.ret),
+  "GTAA.ret" = (JALSH.timingret + MSCIWORLD.timingret + SA10YR.timingret + GSCI.timingret + JASPY.timingret)/5,
+  "BUYANDHOLD.ret" = (JALSH.ret + MSCIWORLD.ret + SA10YR.ret + GSCI.ret + JASPY.ret)/5
 )
 
 rownames(AllAssets.df) <- index(AllAssets)
@@ -209,22 +200,19 @@ detach(package:dplyr)
 
 #### Individual Asset class charts buy and hold vs timing
 
-CHECK THIS!!!!!
-
 ```{r}
-SubsetPeriod <- "1972-01-31::2016-12-31"
-#for calculating the sharpe ratio later
+SubsetPeriod <- "1993-12-31::2016-12-31"
 Rf.ret <- Return.calculate(TBILLYIELDS)[-1,]
 Rf.ret <- Rf.ret[SubsetPeriod]
-
-Returns <- cbind.xts(AllAssets.xts$GSCI.ret, AllAssets.xts$GSCI.timingret)[SubsetPeriod]
+#Rf = Rf.ret$TBILLYIELDS.Close
+Returns <- cbind.xts(AllAssets.xts$JASPY.ret, AllAssets.xts$JASPY.timingret)[SubsetPeriod]
 CumReturns <- 100*cumprod(1+Returns[-1,])
 colnames(CumReturns) <- c("Buy and Hold","Timing")
 colnames(Returns) <- c("Buy and Hold","Timing")
 #how do i add earlier row and make it 100
 
 chart.TimeSeries(CumReturns,
-  main = paste("GSCI Buy and Hold vs Timing ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Log Scale",sep = ""),
+  main = paste("JSAPY Buy and Hold vs Timing ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Log Scale",sep = ""),
   date.format = "%Y",
   colorset = c(4,2),
   ylab = "",
@@ -235,7 +223,7 @@ chart.TimeSeries(CumReturns,
   minor.ticks = FALSE)
 
 chart.Drawdown(Returns,
-  main = paste("GSCI Buy and Hold vs Timing Drawdowns ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Non-log Scale",sep = ""),
+  main = paste("JSAPY Buy and Hold vs Timing Drawdowns ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Non-log Scale",sep = ""),
   date.format = "%Y",
   colorset = c(4,2),
   ylab = "Drawdown",
@@ -250,26 +238,23 @@ stats <- rbind(Return.annualized(Returns,scale = 12)*100,
                c(nrow(subset(Returns, Returns$JALSH.ret >= 0))/nrow(Returns),nrow(subset(Returns, Returns$JALSH.timingret >= 0))/nrow(Returns))*100)
 
 colnames(stats) <- c("Buy and Hold","Timing")
-rownames(stats) <- c("Return",
-                     "Volatility",
-                     "Sharpe",
-                     "MaxDD",
-                     "% Positive Months")
+rownames(stats) <- c("Return","Volatility","Sharpe","MaxDD","% Positive Months")
 round(stats,2)
 write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
-
 ```
+
+why is timing have bigger drawdown?
 
 ####GTAA Performance Charts
 
 ```{r}
-SubsetPeriod <- "1971-12-31::2016-12-31" 
+SubsetPeriod <- "1993-12-31::2016-12-31" 
 Returns <- cbind.xts(AllAssets.xts$BUYANDHOLD.ret,AllAssets.xts$GTAA.ret)[SubsetPeriod]
 CumReturns <- 100*cumprod(1+Returns[-1,])
 colnames(CumReturns) <- c("Buy & Hold","GTAA")
 
 chart.TimeSeries(CumReturns["1973-01-31::2016-12-31"],
-  main = paste("Figure X - Buy & Hold vs Timing Model ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Log Scale",sep = ""),
+  main = paste("Buy & Hold vs Timing Model ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Log Scale",sep = ""),
   date.format = "%Y",
   colorset = c(4,2),
   ylab = "",
@@ -280,7 +265,7 @@ chart.TimeSeries(CumReturns["1973-01-31::2016-12-31"],
   minor.ticks = FALSE)
 
 chart.TimeSeries(CumReturns["1973-01-31::2016-12-31"],
-  main = paste("Figure X - GTAA Buy & Hold vs Timing Model ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Non-log Scale",sep = ""),
+  main = paste("Buy & Hold vs Timing Model ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Non-log Scale",sep = ""),
   date.format = "%Y",
   colorset = c(4,2),
   ylab = "",
@@ -292,14 +277,11 @@ chart.TimeSeries(CumReturns["1973-01-31::2016-12-31"],
 ```
 
 need proper yield curve! 
-how does this compare to USA?
+how does this compare to USA in same period?
 
 ```{r}
-SubsetPeriod <- "1973-01-31::2016-12-31" 
-
 Rf.ret <- Return.calculate(TBILLS)[-1,]
 Rf.ret <- Rf.ret[SubsetPeriod]
-
 
 Returns <- cbind.xts(AllAssets.xts$BUYANDHOLD.ret,AllAssets.xts$GTAA.ret)[SubsetPeriod]
 
@@ -328,9 +310,7 @@ write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
 so better sharpe? [confirm calc method/fix interest rate... should i calc manually?] and less maxdd
 whats kurtosis, information ratio, skew. ask what metrics rad, mb and emyln use...
 run on longer dater in asset allocation ratios
-
 last 12 months, 3 years, etc returns
-
 rolling returns
 
 to do:
@@ -338,12 +318,160 @@ to do:
 * how to calculate dailyreturns with NA
 * check returns make sense - effect of zar?
 * compare to US / JPY
-* create RF to get 2002 in
+* Daily drawdowns
+* monthly returns table
+* Relative performance / rolling perofrmance / alpha
+* 10 worst periods / 10 best periods 
+* do different averages improve SA - check robustness of averages....
 
-To do:
-SA assets
-Daily drawdowns
-monthly returns table
-Relative performance / rolling perofrmance / alpha
-10 worst periods / 10 best periods 
-do different averages improve SA - check robustness of averages....
+####Calculating returns of WMAF / SAMAF
+
+```{r, message=FALSE, warning=FALSE}
+#Import saved pricing data csv files as xts
+getSymbols("TBILLYIELDS",
+           src = "csv",
+           dir="../Data/CSV files/SA Long Term/",
+           col.names=c("Close"))
+TBILLYIELDS <- TBILLYIELDS[SubsetPeriod]
+
+#load an additional library
+library(dplyr)
+
+#Create new all assets
+AllAssets <- cbind.xts(Cl(JALSH),
+                       Cl(MSCIWORLD),
+                       Cl(SA10YR),
+                       Cl(GSCI),
+                       Cl(JASPY),
+                       Cl(TBILLYIELDS))   
+
+SubsetPeriod <- "1992-12-31::2016-12-31"
+
+AllAssets <- AllAssets[SubsetPeriod]
+
+#create dataframe - tidyverse not compatible with xts?
+AllAssets.df <- data.frame(date=index(AllAssets), coredata(AllAssets)) #, row.names = index(AllAssets))
+
+#mutate new columns
+AllAssets.df  <- mutate(AllAssets.df,
+  "JALSH.SMA" =  rollmean(JALSH.Close,10,fill = 0,align = "right"),
+  "MSCIWORLD.SMA" =  rollmean(MSCIWORLD.Close,10,fill = 0,align = "right"),
+  "SA10YR.SMA" =  rollmean(SA10YR.Close,10,fill = 0,align = "right"),
+  "GSCI.SMA" =  rollmean(GSCI.Close,10,fill = 0,align = "right"),
+  "JASPY.SMA" =  rollmean(JASPY.Close,10,fill = 0,align = "right"),
+  "JALSH.ret" =  c(0,diff(JALSH.Close)/lag(JALSH.Close)[-1]),
+  "MSCIWORLD.ret" =  c(0,diff(MSCIWORLD.Close)/lag(MSCIWORLD.Close)[-1]),
+  "SA10YR.ret" =  c(0,diff(SA10YR.Close)/lag(SA10YR.Close)[-1]),
+  "GSCI.ret" =  c(0,diff(GSCI.Close)/lag(GSCI.Close)[-1]),
+  "JASPY.ret" =  c(0,diff(JASPY.Close)/lag(JASPY.Close)[-1]),
+  "RF.ret" =  lag((TBILLYIELDS/100)/12),
+  "JALSH.signal" =  lag(ifelse(JALSH.Close>=JALSH.SMA,1,0)),
+  "MSCIWORLD.signal" =  lag(ifelse(MSCIWORLD.Close>=MSCIWORLD.SMA,1,0)),
+  "SA10YR.signal" =  lag(ifelse(SA10YR.Close>=SA10YR.SMA,1,0)),
+  "GSCI.signal" =  lag(ifelse(GSCI.Close>=GSCI.SMA,1,0)),
+  "JASPY.signal" = lag(ifelse(JASPY.Close>=JASPY.SMA,1,0)),
+  "JALSH.timingret" = ifelse(JALSH.signal == 1,JALSH.ret,RF.ret),
+  "MSCIWORLD.timingret" = ifelse(MSCIWORLD.signal == 1,MSCIWORLD.ret,RF.ret),
+  "SA10YR.timingret" = ifelse(SA10YR.signal == 1,SA10YR.ret,RF.ret),
+  "GSCI.timingret" = ifelse(GSCI.signal == 1,GSCI.ret,RF.ret),
+  "JASPY.timingret" = ifelse(JASPY.signal == 1,JASPY.ret,RF.ret),
+  "GTAA.ret" = (JALSH.timingret + MSCIWORLD.timingret + SA10YR.timingret + GSCI.timingret + JASPY.timingret)/5,
+  "BUYANDHOLD.ret" = (JALSH.ret + MSCIWORLD.ret + SA10YR.ret + GSCI.ret + JASPY.ret)/5,
+  "WMAF.GTAA.ret" = (JALSH.timingret * 0.225) + (MSCIWORLD.timingret * 0.225) + (SA10YR.timingret * 0.225) + (GSCI.timingret * 0.1) + (JASPY.timingret * 0.225),
+  "WMAF.BUYANDHOLD.ret" = (JALSH.ret * 0.225 +  MSCIWORLD.ret * 0.225 + SA10YR.ret * 0.225 + GSCI.ret * 0.1 + JASPY.ret * 0.225),
+  "SAMAF.GTAA.ret" = (JALSH.timingret * 0.25) + (MSCIWORLD.timingret * 0.15) + (SA10YR.timingret * 0.25) + (GSCI.timingret * 0.1) + (JASPY.timingret * 0.25),
+  "SAMAF.BUYANDHOLD.ret" = (JALSH.ret * 0.25 + MSCIWORLD.ret * 0.15 + SA10YR.ret * 0.25 + GSCI.ret * 0.1 + JASPY.ret * 0.25)
+)
+
+rownames(AllAssets.df) <- index(AllAssets)
+
+#Create xts of calculations to analyse performance
+AllAssets.xts <- xts(AllAssets.df[,-1], order.by = AllAssets.df$date)
+
+#detach the packagae dplyr as it isn't compatible with other packages?
+detach(package:dplyr)
+```
+
+
+####GTAA Performance Charts
+
+```{r}
+SubsetPeriod <- "1993-12-31::2016-12-31" 
+Returns <- cbind.xts(AllAssets.xts$BUYANDHOLD.ret,AllAssets.xts$GTAA.ret,AllAssets.xts$WMAF.BUYANDHOLD.ret,AllAssets.xts$WMAF.GTAA.ret,AllAssets.xts$SAMAF.BUYANDHOLD.ret,AllAssets.xts$SAMAF.GTAA.ret)[SubsetPeriod]
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c("B&H","Timing","WMAF B&H","WMAF Timing","SAMAF B&H","SAMAF Timing")
+
+chart.TimeSeries(CumReturns["1973-01-31::2016-12-31"],
+  main = paste("Figure X - Buy & Hold vs Timing Model ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Log Scale",sep = ""),
+  date.format = "%Y",
+  #colorset = c(4,2),
+  ylab = "",
+  ylog = TRUE,
+  #ylim = c(100,500),
+  legend.loc = "left",
+  major.ticks = "years",
+  minor.ticks = FALSE)
+
+chart.TimeSeries(CumReturns["1973-01-31::2016-12-31"],
+  main = paste("Figure X - SA Fund Classification Buy & Hold vs Timing Model ",substr(SubsetPeriod,1,4),"-",substr(SubsetPeriod,13,16),", Non-log Scale",sep = ""),
+  date.format = "%Y",
+  #colorset = c(4,2),
+  ylab = "",
+  ylog = FALSE,
+  #ylim = c(100,500),
+  legend.loc = "left",
+  major.ticks = "years",
+  minor.ticks = FALSE)
+```
+```{r}
+
+SubsetPeriod <- "1993-12-31::2016-12-31" 
+
+Rf.ret <- Return.calculate(TBILLS)[-1,]
+Rf.ret <- Rf.ret[SubsetPeriod]
+
+Returns <- cbind.xts(AllAssets.xts$BUYANDHOLD.ret,AllAssets.xts$GTAA.ret,AllAssets.xts$WMAF.BUYANDHOLD.ret,AllAssets.xts$WMAF.GTAA.ret,AllAssets.xts$SAMAF.BUYANDHOLD.ret,AllAssets.xts$SAMAF.GTAA.ret)[SubsetPeriod]
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c("B&H","Timing","WMAF B&H","WMAF Timing","SAMAF B&H","SAMAF Timing")
+
+stats <- rbind(100*Return.annualized(Returns,scale = 12), 
+               100*StdDev.annualized(Returns,scale = 12), 
+               SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLS.Close),
+               #SortinoRatio(Returns, MAR = 0),
+               100*maxDrawdown(Returns,invert = FALSE),
+               100*c(Return.annualized(Return.calculate(Cl(SACPI))[SubsetPeriod],scale = 12))
+               )
+
+colnames(stats) <- c("B&H","Timing","WMAF B&H","WMAF Timing","SAMAF B&H","SAMAF Timing")
+rownames(stats) <- c("Return",
+                     "Volatility",
+                     paste("Sharpe (",round(100*Return.annualized(Rf.ret$TBILLS.Close[SubsetPeriod],scale = 12),2),"%)", sep = ""),
+                     #"Sortino",
+                     "MaxDD",
+                     "Inflation CAGR")
+round(stats,2)
+write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
+
+Return.annualized(Rf.ret$TBILLS.Close[SubsetPeriod],scale = 12)
+
+#look to add skewness/ kurtosis
+
+rbind(100*Return.annualized(Returns["2016-01-01::2016-12-31"],scale = 12),
+      100*Return.annualized(Returns["2016-12-01::2016-12-31"],scale = 12),
+      100*Return.annualized(Returns["2016-10-01::2016-12-31"],scale = 12),
+      100*Return.annualized(Returns["2016-07-01::2016-12-31"],scale = 12),
+      100*Return.annualized(Returns["2016-01-01::2016-12-31"],scale = 12),
+      100*Return.annualized(Returns["2015-01-01::2016-12-31"],scale = 12),
+      100*Return.annualized(Returns["2014-01-01::2016-12-31"],scale = 12),
+      100*Return.annualized(Returns["2012-01-01::2016-12-31"],scale = 12),
+      100*Return.annualized(Returns["2010-01-01::2016-12-31"],scale = 12),
+      100*Return.annualized(Returns["2007-01-01::2016-12-31"],scale = 12)
+)
+
+100*Return.annualized(Returns["2006-12-31::2016-12-31"],scale = 12)
+
+test
+
+
+
+```
