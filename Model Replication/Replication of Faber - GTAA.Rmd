@@ -422,6 +422,480 @@ Summary
 ```{r}
 table.Drawdowns(Returns)
 table.Drawdowns(Returns$GTAA.ret)
+```
 
+###testing out new averaging
+####Including Property
+
+AssetPrices <- cbind.xts(Cl(SP500),
+                         Cl(EAFE),
+                         Cl(US10YR),
+                         Cl(GSCI),
+                         Cl(NAREIT),
+                         Cl(TBILLYIELDS))
+                         
+                      
+```{r, message=FALSE, warning=FALSE}
+#remove past data
+rm(list = ls(envir = globalenv()),envir = globalenv()) #clear Vars from global enviroment
+
+#Set Symbols
+symbols <- c("TBILLS","SP500","EAFE","US10YR","GSCI","NAREIT","CPI","TBILLYIELDS")
+
+#Import saved pricing data csv files as xts
+getSymbols(symbols,
+           src = "csv",
+           dir="../Data/CSV files",
+           col.names=c("Close"))
+
+#Define subset dates for different period
+SubsetPeriod.Reporting <- "1972-12-31::2016-12-31"
+SubsetPeriod.Calculations <- "1972-01-31::2016-12-31"
+
+AllAssets <- cbind.xts(Cl(TBILLS),
+                       Cl(SP500),
+                       Cl(EAFE),
+                       Cl(US10YR),
+                       Cl(GSCI),
+                       Cl(NAREIT),
+                       Cl(CPI)
+                       )                       
+
+AllAssets <- AllAssets[SubsetPeriod.Reporting]
+colnames(AllAssets) <- symbols
+
+#calculate returns and cum returns
+AllAssets.ret <- Return.calculate(AllAssets)[-1,]
+AllAssets.cumret <- 100*cumprod(1+ ROC(AllAssets, type = "discrete")[-1,])
+#how do i add a row at the top with value of 100 for each? rbind?
+
+chart.TimeSeries(AllAssets.cumret[SubsetPeriod.Reporting],
+ main = paste("Figure X - SA Asset Class Returns, Log Scale",sep = ""),
+ ylab = "",
+ #ylog = TRUE,
+ #ylim = c(100,250000),
+ #date.format = "%Y",
+ major.ticks = "years",
+ legend.loc = "topleft",
+ colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue")
+ #minor.ticks =FALSE
+ )
+
+#how do i change scale format!
+```
+
+```{r}
+#Create xts for Returns
+Returns <- AllAssets.ret[SubsetPeriod.Reporting]
+
+#calculate statistics and store as "stats"
+stats <- rbind(100*Return.annualized(Returns,scale = 12), 
+               100*StdDev.annualized(Returns,scale = 12), 
+               SharpeRatio.annualized(Returns,Rf = AllAssets.ret$TBILLS),
+               100*maxDrawdown(Returns,scale = 12,invert = FALSE),
+               100*c(Return.annualized(Returns$CPI,scale = 12)))
+
+#rename table rows/column names and format
+colnames(stats) <- c("TBILLS","SP500","EAFE","US10YR","GSCI","NAREIT","CPI")    
+
+rownames(stats) <- c("Return",
+                     "Volatility",
+                     paste("Sharpe (",round(stats[1,"TBILLS"],2),"%)", sep = ""),
+                     "MaxDD",
+                     "Inflation CAGR")
+
+stats <- round(stats[,-7],2) #delete inflation column - change to 7 when including property.
+
+#print
+stats
+
+#copies stats to clipboad for pasting into word/excel
+#write.table(stats, "clipboard", sep="\t", col.names=NA) 
+```
+
+
+```{r}
+myChart_Theme <- chart_theme() #Create a chart_theme
+myChart_Theme$col$line.col <- "blue"
+
+SMAperiod <- 10
+
+chart_Series(Cl(SP500),
+  name = paste("SP500 vs 10 Month Simple Moving Average",sep = ""),
+  theme=myChart_Theme,
+  type = "line",
+  subset = SubsetPeriod.Reporting,
+  TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
+  )
+
+chart_Series(Cl(EAFE),
+  name = paste("MSCI World vs 10 Month Simple Moving Average",sep = ""),
+  theme=myChart_Theme,
+  type = "line",
+  subset = SubsetPeriod.Reporting,
+  TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
+  )
+
+chart_Series(Cl(US10YR),
+  name = paste("US10YR vs 10 Month Simple Moving Average",sep = ""),
+  theme=myChart_Theme,
+  type = "line",
+  subset = SubsetPeriod.Reporting,
+  TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
+  )
+
+chart_Series(Cl(GSCI),
+  name = paste("GSCI vs 10 Month Simple Moving Average",sep = ""),
+  theme=myChart_Theme,
+  type = "line",
+  subset = SubsetPeriod.Reporting,
+  TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
+  )
+
+chart_Series(Cl(NAREIT),
+  name = paste("NAREIT vs 10 Month Simple Moving Average",sep = ""),
+  theme=myChart_Theme,
+  type = "line",
+  subset = SubsetPeriod.Reporting,
+  TA = 'add_SMA(n=SMAperiod, on=1, col="red")'
+  )
+```
+
+
+####Calculating returns
+
+```{r, message=FALSE, warning=FALSE}
+#load an additional library
+library(dplyr)
+
+#Create new all assets
+AllAssets <- cbind.xts(Cl(SP500),
+                       Cl(EAFE),
+                       Cl(US10YR),
+                       Cl(GSCI),
+                       Cl(NAREIT),
+                       Cl(TBILLYIELDS))   
+
+AllAssets <- AllAssets[SubsetPeriod.Calculations]
+
+#create dataframe - tidyverse not compatible with xts?
+AllAssets.df <- data.frame(date=index(AllAssets), coredata(AllAssets)) #, row.names = index(AllAssets))
+
+bandwidth <- 0.02
+#mutate new columns
+AllAssets.df  <- mutate(AllAssets.df,
+  "RF.ret" =  c(0,lag((TBILLYIELDS.Close/100)/12)[-1]), 
+  #is this right?
+
+  "SP500.ret" =  c(0,diff(SP500.Close)/lag(SP500.Close)[-1]),
+  
+  "SP500.2m.SMA" =  rollmean(SP500.Close,2,fill = 0,align = "right"),
+  "SP500.5m.SMA" =  rollmean(SP500.Close,5,fill = 0,align = "right"),
+  "SP500.10m.SMA" =  rollmean(SP500.Close,10,fill = 0,align = "right"),
+  
+  "SP500.2m.signal" =  lag(ifelse(SP500.Close>=SP500.2m.SMA,1,0)),
+  "SP500.5m.signal" =  lag(ifelse(SP500.Close>=SP500.5m.SMA,1,0)),
+  "SP500.10m.signal" =  lag(ifelse(SP500.Close>=SP500.10m.SMA,1,0)),
+  "SP500.2m.signal.delayed" =  lag(ifelse(SP500.Close>=SP500.2m.SMA,ifelse(SP500.2m.signal==1,1,0),0)),
+  "SP500.5m.signal.delayed" =  lag(ifelse(SP500.Close>=SP500.5m.SMA,ifelse(SP500.5m.signal==1,1,0),0)),  
+  "SP500.10m.signal.delayed" =  lag(ifelse(SP500.Close>=SP500.10m.SMA,ifelse(SP500.10m.signal==1,1,0),0)),
+  
+  "SP500.2m.timingret" = ifelse(SP500.2m.signal == 1,SP500.ret,RF.ret),
+  "SP500.5m.timingret" = ifelse(SP500.5m.signal == 1,SP500.ret,RF.ret),
+  "SP500.10m.timingret" = ifelse(SP500.10m.signal == 1,SP500.ret,RF.ret),
+  "SP500.2m.timingret.delayed" = ifelse(SP500.2m.signal.delayed == 1,SP500.ret,RF.ret),
+  "SP500.5m.timingret.delayed" = ifelse(SP500.5m.signal.delayed == 1,SP500.ret,RF.ret),
+  "SP500.10m.timingret.delayed" = ifelse(SP500.10m.signal.delayed == 1,SP500.ret,RF.ret),
+ 
+  "SP500.avg.timingret" = (SP500.2m.timingret + SP500.5m.timingret + SP500.10m.timingret)/3,
+  "SP500.avg.timingret.delayed" = (SP500.2m.timingret.delayed + SP500.5m.timingret.delayed + SP500.10m.timingret.delayed)/3,  
+  "SP500.avg.combo" = (SP500.avg.timingret + SP500.avg.timingret.delayed)/2,
+
+  "EAFE.ret" =  c(0,diff(EAFE.Close)/lag(EAFE.Close)[-1]),
+  
+  "EAFE.2m.SMA" =  rollmean(EAFE.Close,2,fill = 0,align = "right"),
+  "EAFE.5m.SMA" =  rollmean(EAFE.Close,5,fill = 0,align = "right"),
+  "EAFE.10m.SMA" =  rollmean(EAFE.Close,10,fill = 0,align = "right"),
+  
+  "EAFE.2m.signal" =  lag(ifelse(EAFE.Close>=EAFE.2m.SMA,1,0)),
+  "EAFE.5m.signal" =  lag(ifelse(EAFE.Close>=EAFE.5m.SMA,1,0)),
+  "EAFE.10m.signal" =  lag(ifelse(EAFE.Close>=EAFE.10m.SMA,1,0)),
+  "EAFE.2m.signal.delayed" =  lag(ifelse(EAFE.Close>=EAFE.2m.SMA,ifelse(EAFE.2m.signal==1,1,0),0)),
+  "EAFE.5m.signal.delayed" =  lag(ifelse(EAFE.Close>=EAFE.5m.SMA,ifelse(EAFE.5m.signal==1,1,0),0)),  
+  "EAFE.10m.signal.delayed" =  lag(ifelse(EAFE.Close>=EAFE.10m.SMA,ifelse(EAFE.10m.signal==1,1,0),0)),
+  
+  "EAFE.2m.timingret" = ifelse(EAFE.2m.signal == 1,EAFE.ret,RF.ret),
+  "EAFE.5m.timingret" = ifelse(EAFE.5m.signal == 1,EAFE.ret,RF.ret),
+  "EAFE.10m.timingret" = ifelse(EAFE.10m.signal == 1,EAFE.ret,RF.ret),
+  "EAFE.2m.timingret.delayed" = ifelse(EAFE.2m.signal.delayed == 1,EAFE.ret,RF.ret),
+  "EAFE.5m.timingret.delayed" = ifelse(EAFE.5m.signal.delayed == 1,EAFE.ret,RF.ret),
+  "EAFE.10m.timingret.delayed" = ifelse(EAFE.10m.signal.delayed == 1,EAFE.ret,RF.ret),
+  
+  "EAFE.avg.timingret" = (EAFE.2m.timingret + EAFE.5m.timingret + EAFE.10m.timingret)/3,
+  "EAFE.avg.timingret.delayed" = (EAFE.2m.timingret.delayed + EAFE.5m.timingret.delayed + EAFE.10m.timingret.delayed)/3,
+  "EAFE.avg.combo" = (EAFE.avg.timingret + EAFE.avg.timingret.delayed)/2,
+    
+  "US10YR.ret" =  c(0,diff(US10YR.Close)/lag(US10YR.Close)[-1]),
+  
+  "US10YR.2m.SMA" =  rollmean(US10YR.Close,2,fill = 0,align = "right"),
+  "US10YR.5m.SMA" =  rollmean(US10YR.Close,5,fill = 0,align = "right"),
+  "US10YR.10m.SMA" =  rollmean(US10YR.Close,10,fill = 0,align = "right"),
+  
+  "US10YR.2m.signal" =  lag(ifelse(US10YR.Close>=US10YR.2m.SMA,1,0)),
+  "US10YR.5m.signal" =  lag(ifelse(US10YR.Close>=US10YR.5m.SMA,1,0)),
+  "US10YR.10m.signal" =  lag(ifelse(US10YR.Close>=US10YR.10m.SMA,1,0)),
+  "US10YR.2m.signal.delayed" =  lag(ifelse(US10YR.Close>=US10YR.2m.SMA,ifelse(US10YR.2m.signal==1,1,0),0)),
+  "US10YR.5m.signal.delayed" =  lag(ifelse(US10YR.Close>=US10YR.5m.SMA,ifelse(US10YR.5m.signal==1,1,0),0)),  
+  "US10YR.10m.signal.delayed" =  lag(ifelse(US10YR.Close>=US10YR.10m.SMA,ifelse(US10YR.10m.signal==1,1,0),0)),
+  
+  "US10YR.2m.timingret" = ifelse(US10YR.2m.signal == 1,US10YR.ret,RF.ret),
+  "US10YR.5m.timingret" = ifelse(US10YR.5m.signal == 1,US10YR.ret,RF.ret),
+  "US10YR.10m.timingret" = ifelse(US10YR.10m.signal == 1,US10YR.ret,RF.ret),
+  "US10YR.2m.timingret.delayed" = ifelse(US10YR.2m.signal.delayed == 1,US10YR.ret,RF.ret),
+  "US10YR.5m.timingret.delayed" = ifelse(US10YR.5m.signal.delayed == 1,US10YR.ret,RF.ret),
+  "US10YR.10m.timingret.delayed" = ifelse(US10YR.10m.signal.delayed == 1,US10YR.ret,RF.ret),
+  
+  "US10YR.avg.timingret" = (US10YR.2m.timingret + US10YR.5m.timingret + US10YR.10m.timingret)/3,
+  "US10YR.avg.timingret.delayed" = (US10YR.2m.timingret.delayed + US10YR.5m.timingret.delayed + US10YR.10m.timingret.delayed)/3,
+  "US10YR.avg.combo" = (US10YR.avg.timingret + US10YR.avg.timingret.delayed)/2,
+  
+  "GSCI.ret" =  c(0,diff(GSCI.Close)/lag(GSCI.Close)[-1]),
+  
+  "GSCI.2m.SMA" =  rollmean(GSCI.Close,2,fill = 0,align = "right"),
+  "GSCI.5m.SMA" =  rollmean(GSCI.Close,5,fill = 0,align = "right"),
+  "GSCI.10m.SMA" =  rollmean(GSCI.Close,10,fill = 0,align = "right"),
+  
+  "GSCI.2m.signal" =  lag(ifelse(GSCI.Close>=GSCI.2m.SMA,1,0)),
+  "GSCI.5m.signal" =  lag(ifelse(GSCI.Close>=GSCI.5m.SMA,1,0)),
+  "GSCI.10m.signal" =  lag(ifelse(GSCI.Close>=GSCI.10m.SMA,1,0)),
+  "GSCI.2m.signal.delayed" =  lag(ifelse(GSCI.Close>=GSCI.2m.SMA,ifelse(GSCI.2m.signal==1,1,0),0)),
+  "GSCI.5m.signal.delayed" =  lag(ifelse(GSCI.Close>=GSCI.5m.SMA,ifelse(GSCI.5m.signal==1,1,0),0)),  
+  "GSCI.10m.signal.delayed" =  lag(ifelse(GSCI.Close>=GSCI.10m.SMA,ifelse(GSCI.10m.signal==1,1,0),0)),
+   
+  "GSCI.2m.timingret" = ifelse(GSCI.2m.signal == 1,GSCI.ret,RF.ret),
+  "GSCI.5m.timingret" = ifelse(GSCI.5m.signal == 1,GSCI.ret,RF.ret),
+  "GSCI.10m.timingret" = ifelse(GSCI.10m.signal == 1,GSCI.ret,RF.ret),
+  "GSCI.2m.timingret.delayed" = ifelse(GSCI.2m.signal.delayed == 1,GSCI.ret,RF.ret),
+  "GSCI.5m.timingret.delayed" = ifelse(GSCI.5m.signal.delayed == 1,GSCI.ret,RF.ret),
+  "GSCI.10m.timingret.delayed" = ifelse(GSCI.10m.signal.delayed == 1,GSCI.ret,RF.ret),
+
+  "GSCI.avg.timingret" = (GSCI.2m.timingret + GSCI.5m.timingret + GSCI.10m.timingret)/3,
+  "GSCI.avg.timingret.delayed" = (GSCI.2m.timingret.delayed + GSCI.5m.timingret.delayed + GSCI.10m.timingret.delayed)/3,
+  "GSCI.avg.combo" = (GSCI.avg.timingret + GSCI.avg.timingret.delayed)/2,
+
+  "NAREIT.ret" =  c(0,diff(NAREIT.Close)/lag(NAREIT.Close)[-1]),
+  
+  "NAREIT.2m.SMA" =  rollmean(NAREIT.Close,2,fill = 0,align = "right"),
+  "NAREIT.5m.SMA" =  rollmean(NAREIT.Close,5,fill = 0,align = "right"),
+  "NAREIT.10m.SMA" =  rollmean(NAREIT.Close,10,fill = 0,align = "right"),
+  
+  "NAREIT.2m.signal" =  lag(ifelse(NAREIT.Close>=NAREIT.2m.SMA,1,0)),
+  "NAREIT.5m.signal" =  lag(ifelse(NAREIT.Close>=NAREIT.5m.SMA,1,0)),
+  "NAREIT.10m.signal" =  lag(ifelse(NAREIT.Close>=NAREIT.10m.SMA,1,0)),
+  "NAREIT.2m.signal.delayed" =  lag(ifelse(NAREIT.Close>=NAREIT.2m.SMA,ifelse(NAREIT.2m.signal==1,1,0),0)),
+  "NAREIT.5m.signal.delayed" =  lag(ifelse(NAREIT.Close>=NAREIT.5m.SMA,ifelse(NAREIT.5m.signal==1,1,0),0)),  
+  "NAREIT.10m.signal.delayed" =  lag(ifelse(NAREIT.Close>=NAREIT.10m.SMA,ifelse(NAREIT.10m.signal==1,1,0),0)),
+   
+  "NAREIT.2m.timingret" = ifelse(NAREIT.2m.signal == 1,NAREIT.ret,RF.ret),
+  "NAREIT.5m.timingret" = ifelse(NAREIT.5m.signal == 1,NAREIT.ret,RF.ret),
+  "NAREIT.10m.timingret" = ifelse(NAREIT.10m.signal == 1,NAREIT.ret,RF.ret),
+  "NAREIT.2m.timingret.delayed" = ifelse(NAREIT.2m.signal.delayed == 1,NAREIT.ret,RF.ret),
+  "NAREIT.5m.timingret.delayed" = ifelse(NAREIT.5m.signal.delayed == 1,NAREIT.ret,RF.ret),
+  "NAREIT.10m.timingret.delayed" = ifelse(NAREIT.10m.signal.delayed == 1,NAREIT.ret,RF.ret),
+
+  "NAREIT.avg.timingret" = (NAREIT.2m.timingret + NAREIT.5m.timingret + NAREIT.10m.timingret)/3,
+  "NAREIT.avg.timingret.delayed" = (NAREIT.2m.timingret.delayed + NAREIT.5m.timingret.delayed + NAREIT.10m.timingret.delayed)/3,
+  "NAREIT.avg.combo" = (NAREIT.avg.timingret + NAREIT.avg.timingret.delayed)/2,
+
+  "BuyandHold.ret" = (SP500.ret + EAFE.ret + US10YR.ret + GSCI.ret + NAREIT.ret)/5,
+  "Timing.ret" = (SP500.10m.timingret + EAFE.10m.timingret + US10YR.10m.timingret + GSCI.10m.timingret + NAREIT.10m.timingret)/5,
+  "DelayedTiming.ret" = (SP500.10m.timingret.delayed + EAFE.10m.timingret.delayed + US10YR.10m.timingret.delayed + GSCI.10m.timingret.delayed 
+                         + NAREIT.10m.timingret.delayed)/5,
+  "Avg.Timing.ret" = (SP500.avg.timingret + EAFE.avg.timingret + US10YR.avg.timingret + GSCI.avg.timingret + NAREIT.avg.timingret)/5,
+  "Avg.DelayedTiming.ret" = (SP500.avg.timingret.delayed + EAFE.avg.timingret.delayed + 
+                            US10YR.avg.timingret.delayed + NAREIT.avg.timingret.delayed + GSCI.avg.timingret.delayed)/5,
+  "Avg.Combo.ret" = (SP500.avg.combo + EAFE.avg.combo + 
+                            US10YR.avg.combo + GSCI.avg.combo + NAREIT.avg.combo)/5
+  
+  )
+
+rownames(AllAssets.df) <- index(AllAssets)
+
+#Create xts of calculations to analyse performance
+AllAssets.xts <- xts(AllAssets.df[,-1], order.by = AllAssets.df$date)
+
+#detach the packagae dplyr as it isn't compatible with other packages?
+detach(package:dplyr)
+```
+
+#### Property Timng Strategy Comparisons
+
+```{r}
+#for calculating the sharpe ratio later
+Rf.ret <- Return.calculate(TBILLYIELDS)[-1,]
+Rf.ret <- Rf.ret[SubsetPeriod.Reporting]
+
+#MSCI World
+Returns <- cbind.xts(AllAssets.xts$NAREIT.ret, 
+                     AllAssets.xts$NAREIT.10m.timingret, 
+                     AllAssets.xts$NAREIT.10m.timingret.delayed, 
+                     AllAssets.xts$NAREIT.avg.timingret,
+                     AllAssets.xts$NAREIT.avg.timingret.delayed,
+                     AllAssets.xts$NAREIT.avg.combo)[SubsetPeriod.Reporting]
+
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c("Buy and Hold","Timing","Timing Delayed","Avg Timing","Avg Timing Delayed","Avg Combo")
+colnames(Returns) <- c("Buy and Hold","Timing","Timing Delayed","Avg Timing","Avg Timing Delayed","Avg Combo")
+
+#how do i add earlier row and make it 100
+
+#as.numeric(substr(SubsetPeriod,1,4))+1
+chart.TimeSeries(CumReturns,
+  main = paste("Buy and Hold vs Timing vs Timing Avg, ",
+               substr(SubsetPeriod.Reporting,1,4),"-",
+               substr(SubsetPeriod.Reporting,13,16),
+               ", Log Scale",sep = ""),
+  date.format = "%Y",
+  colorset = c(4,2,3,5,6,7),
+  ylab = "",
+  ylog = TRUE,
+  #ylim = c(50,1000),
+  legend.loc = "topleft",
+  major.ticks = "years",
+  minor.ticks = FALSE)
+
+chart.Drawdown(Returns,#[,-1], to exclude B&H
+  main = paste("Buy and Hold vs Timing vs Timing Avg",substr(SubsetPeriod.Reporting,1,4),"-",substr(SubsetPeriod.Reporting,13,16),", Non-log Scale",sep = ""),
+  date.format = "%Y",
+  colorset = c(4,2,3,5,6),
+  ylab = "Drawdown",
+  legend.loc = "bottomright",
+  major.ticks = "years",
+  minor.ticks = FALSE)
+
+```
+
+```{r}
+stats <- rbind(Return.annualized(Returns,scale = 12)*100, 
+               StdDev.annualized(Returns,scale = 12)*100, 
+               SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLYIELDS.Close),
+               maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
+               
+               # Sortino
+               SortinoRatio(Returns, MAR = 0),
+               
+               #Information Ratio
+               InformationRatio(Returns, Returns$"Buy and Hold"),
+               
+               #Ulcer Index
+               100*UlcerIndex(Returns),
+               
+               #Calmar Ratio
+               CalmarRatio(Returns["2014::2017"], scale = 12)
+               
+               )
+               
+colnames(stats) <- c("Buy and Hold","Timing","Timing Delayed","Average Timing","Average Timing Delayed","Avg Combo")
+rownames(stats) <- c("Return",
+                     "Volatility",
+                     "Sharpe",
+                     "MaxDD",
+                     # "% Positive Months",
+                     # "% Months invested in the Asset",
+                     # "% Positive Months when invested",
+                     "Sortino Ratio",
+                     "Information Ratio",
+                     "Ulcer Index",
+                     "Calmar Ratio")
+
+round(stats,2)
+write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
+```
+####GTAA Performance Charts
+
+```{r}
+Returns <- cbind.xts(AllAssets.xts$BuyandHold.ret,
+                     AllAssets.xts$Timing.ret,
+                     AllAssets.xts$DelayedTiming.ret,
+                     AllAssets.xts$Avg.Timing.ret,
+                     AllAssets.xts$Avg.DelayedTiming.ret,
+                     AllAssets.xts$Avg.Combo.ret)[SubsetPeriod.Reporting]
+
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c("Buy & Hold","Timing","Delayed Timing","Avg Timing","Avg Delayed Timing","Avg Combo")
+
+chart.TimeSeries(CumReturns,
+  main = "Figure X - Timing Model Comparison, Log Scale",
+  date.format = "%Y",
+  colorset = c(4,2,3,5,6,7),
+  ylab = "",
+  ylog = TRUE,
+  #ylim = c(100,76000),
+  legend.loc = "topleft",
+  major.ticks = "years",
+  minor.ticks = FALSE,
+  yaxis = TRUE)
+
+chart.TimeSeries(CumReturns,
+  main = "Figure X - Timing Model Comparison, Non Log Scale",
+  date.format = "%Y",
+  colorset = c(4,2,3,5,6,7),
+  ylab = "",
+  ylog = FALSE,
+  #ylim = c(100,500),
+  legend.loc = "topleft",
+  major.ticks = "years",
+  minor.ticks = FALSE)
+```
+
+```{r}
+Rf.ret <- Return.calculate(TBILLS)[-1,]
+Rf.ret <- Rf.ret[SubsetPeriod.Reporting]
+
+Returns <- cbind.xts(AllAssets.xts$BuyandHold.ret,
+                     AllAssets.xts$Timing.ret,
+                     AllAssets.xts$DelayedTiming.ret,
+                     AllAssets.xts$Avg.Timing.ret,
+                     AllAssets.xts$Avg.DelayedTiming.ret,
+                     AllAssets.xts$Avg.Combo.ret)[SubsetPeriod.Reporting]
+
+stats <- rbind(100*Return.annualized(Returns,scale = 12), 
+               100*StdDev.annualized(Returns,scale = 12), 
+               SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLS.Close),
+               100*maxDrawdown(Returns,invert = FALSE),
+               100*c(Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod.Reporting],scale = 12)),
+               
+               # Sortino
+               SortinoRatio(Returns, MAR = 0),
+               
+               #Information Ratio
+               InformationRatio(Returns, Returns$BuyandHold.ret),
+               
+               #Ulcer Index
+               100*UlcerIndex(Returns),
+               
+               #Calmar Ratio
+               CalmarRatio(Returns["2014::2017"], scale = 12)
+               )
+
+colnames(stats) <- c("Buy & Hold",
+                     "Timing",
+                     "Delayed Timing",
+                     "Avg Timing",
+                     "Avg Delayed Timing",
+                     "Avg Combo")
+
+rownames(stats) <- c("Return",
+                     "Volatility",
+                     "Sharpe", #what %?
+                     "MaxDD",
+                     "Inflation CAGR",
+                     "Sortino Ratio",
+                     "Information Ratio",
+                     "Ulcer Index",
+                     "Calmar Ratio")
+
+round(stats,2)
+#write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
 ```
 
