@@ -1,0 +1,59 @@
+---
+title: "Download of SA Assets"
+output: html_notebook
+---
+
+###Downloading SA Data
+
+This file downloads Bloomberg pricing data for the following asset classes a South African investor would look at: 
+
+* Domestic Equity (South Africa JSE All Share TR Index)
+* Global Equity (MSCI Daily TR Gross World) 
+* Commodities
+* 
+* 
+
+All indices are total return indices provided by Bloomberg in ZAR.
+
+Latest data is from 2002?
+
+```{r, message=FALSE}
+#load required packages
+library(Rblpapi)
+library(quantmod)
+
+#connect to bloomberg
+blpConnect()
+```
+
+```{r}
+#Download bloomberg data for indices Faber used
+symbols <- c("XBT Curncy","EXX SJ Equity")
+
+#Set time period
+start.date <- as.Date("1999-12-31")
+end.date <- as.Date("2016-12-31")
+
+#Download data from Bloomberg
+BloombergData <- bdh(securities = symbols, 
+            c("PX_LAST"), 
+            start.date= start.date,
+            end.date = end.date
+            #options=opt
+            )
+
+rm(symbols,start.date,end.date)
+```
+
+```{r}
+#convert Bloomberg data into individual xts files 
+Bitcoin <- xts(BloombergData$`XBT Curncy`[,-1],BloombergData$`XBT Curncy`[,1])
+Bitcoin <- to.monthly(Bitcoin,index = "lastof", drop.time=TRUE)[,4]
+rm(BloombergData)
+```
+
+```{r}
+#save as CSV files for use in other files - change to loop at some point
+write.zoo(Bitcoin, file="CSV Files/Bitcoin.csv", sep=",")
+```
+
