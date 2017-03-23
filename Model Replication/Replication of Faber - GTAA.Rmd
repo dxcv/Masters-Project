@@ -462,7 +462,7 @@ AllAssets <- cbind.xts(Cl(TBILLS),
                        )                       
 
 AllAssets <- AllAssets[SubsetPeriod.Reporting]
-colnames(AllAssets) <- symbols
+colnames(AllAssets) <- symbols[-8]
 
 #calculate returns and cum returns
 AllAssets.ret <- Return.calculate(AllAssets)[-1,]
@@ -708,6 +708,8 @@ AllAssets.df  <- mutate(AllAssets.df,
   "NAREIT.avg.combo" = (NAREIT.avg.timingret + NAREIT.avg.timingret.delayed)/2,
 
   "BuyandHold.ret" = (SP500.ret + EAFE.ret + US10YR.ret + GSCI.ret + NAREIT.ret)/5,
+  "Timing.2m.ret" = (SP500.2m.timingret + EAFE.2m.timingret + US10YR.2m.timingret + GSCI.2m.timingret + NAREIT.2m.timingret)/5,
+  "Timing.5m.ret" = (SP500.5m.timingret + EAFE.5m.timingret + US10YR.5m.timingret + GSCI.5m.timingret + NAREIT.5m.timingret)/5,
   "Timing.ret" = (SP500.10m.timingret + EAFE.10m.timingret + US10YR.10m.timingret + GSCI.10m.timingret + NAREIT.10m.timingret)/5,
   "DelayedTiming.ret" = (SP500.10m.timingret.delayed + EAFE.10m.timingret.delayed + US10YR.10m.timingret.delayed + GSCI.10m.timingret.delayed 
                          + NAREIT.10m.timingret.delayed)/5,
@@ -728,7 +730,7 @@ AllAssets.xts <- xts(AllAssets.df[,-1], order.by = AllAssets.df$date)
 detach(package:dplyr)
 ```
 
-#### Property Timng Strategy Comparisons
+#### SP500 Timing Strategy Comparisons
 
 ```{r}
 #for calculating the sharpe ratio later
@@ -736,12 +738,12 @@ Rf.ret <- Return.calculate(TBILLYIELDS)[-1,]
 Rf.ret <- Rf.ret[SubsetPeriod.Reporting]
 
 #MSCI World
-Returns <- cbind.xts(AllAssets.xts$NAREIT.ret, 
-                     AllAssets.xts$NAREIT.10m.timingret, 
-                     AllAssets.xts$NAREIT.10m.timingret.delayed, 
-                     AllAssets.xts$NAREIT.avg.timingret,
-                     AllAssets.xts$NAREIT.avg.timingret.delayed,
-                     AllAssets.xts$NAREIT.avg.combo)[SubsetPeriod.Reporting]
+Returns <- cbind.xts(AllAssets.xts$SP500.ret, 
+                     AllAssets.xts$SP500.10m.timingret, 
+                     AllAssets.xts$SP500.10m.timingret.delayed, 
+                     AllAssets.xts$SP500.avg.timingret,
+                     AllAssets.xts$SP500.avg.timingret.delayed,
+                     AllAssets.xts$SP500.avg.combo)[SubsetPeriod.Reporting]
 
 CumReturns <- 100*cumprod(1+Returns[-1,])
 colnames(CumReturns) <- c("Buy and Hold","Timing","Timing Delayed","Avg Timing","Avg Timing Delayed","Avg Combo")
@@ -776,9 +778,12 @@ chart.Drawdown(Returns,#[,-1], to exclude B&H
 ```
 
 ```{r}
+Rf.ret <- Return.calculate(TBILLS)[-1,]
+Rf.ret <- Rf.ret[SubsetPeriod.Reporting]
+
 stats <- rbind(Return.annualized(Returns,scale = 12)*100, 
                StdDev.annualized(Returns,scale = 12)*100, 
-               SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLYIELDS.Close),
+               SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLS.Close),
                maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
                
                # Sortino
@@ -811,18 +816,28 @@ rownames(stats) <- c("Return",
 round(stats,2)
 write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
 ```
-####GTAA Performance Charts
+
+####GTAA Performance Charts - Buy and hold vs Timing vs Diversifed portfolio of strategies
 
 ```{r}
+#need to add trading bands when complete - if time look at a mean reversion strat
+Rf.ret <- Return.calculate(TBILLS)[-1,]
+Rf.ret <- Rf.ret[SubsetPeriod.Reporting]
+
 Returns <- cbind.xts(AllAssets.xts$BuyandHold.ret,
                      AllAssets.xts$Timing.ret,
-                     AllAssets.xts$DelayedTiming.ret,
-                     AllAssets.xts$Avg.Timing.ret,
-                     AllAssets.xts$Avg.DelayedTiming.ret,
+                     #AllAssets.xts$DelayedTiming.ret,
+                     #AllAssets.xts$Avg.Timing.ret,
+                     #AllAssets.xts$Avg.DelayedTiming.ret,
                      AllAssets.xts$Avg.Combo.ret)[SubsetPeriod.Reporting]
 
 CumReturns <- 100*cumprod(1+Returns[-1,])
-colnames(CumReturns) <- c("Buy & Hold","Timing","Delayed Timing","Avg Timing","Avg Delayed Timing","Avg Combo")
+
+colnames(CumReturns) <- c("Buy & Hold",
+                       "Timing",
+                       #"Delayed Timing","Avg Timing","Avg Delayed Timing",
+                       "Avg Combo")
+
 
 chart.TimeSeries(CumReturns,
   main = "Figure X - Timing Model Comparison, Log Scale",
@@ -836,66 +851,171 @@ chart.TimeSeries(CumReturns,
   minor.ticks = FALSE,
   yaxis = TRUE)
 
-chart.TimeSeries(CumReturns,
-  main = "Figure X - Timing Model Comparison, Non Log Scale",
-  date.format = "%Y",
-  colorset = c(4,2,3,5,6,7),
-  ylab = "",
-  ylog = FALSE,
-  #ylim = c(100,500),
-  legend.loc = "topleft",
-  major.ticks = "years",
-  minor.ticks = FALSE)
-```
 
-```{r}
-Rf.ret <- Return.calculate(TBILLS)[-1,]
-Rf.ret <- Rf.ret[SubsetPeriod.Reporting]
-
-Returns <- cbind.xts(AllAssets.xts$BuyandHold.ret,
-                     AllAssets.xts$Timing.ret,
-                     AllAssets.xts$DelayedTiming.ret,
-                     AllAssets.xts$Avg.Timing.ret,
-                     AllAssets.xts$Avg.DelayedTiming.ret,
-                     AllAssets.xts$Avg.Combo.ret)[SubsetPeriod.Reporting]
+colnames(Returns) <- colnames(CumReturns)
 
 stats <- rbind(100*Return.annualized(Returns,scale = 12), 
                100*StdDev.annualized(Returns,scale = 12), 
                SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLS.Close),
                100*maxDrawdown(Returns,invert = FALSE),
-               100*c(Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod.Reporting],scale = 12)),
-               
-               # Sortino
-               SortinoRatio(Returns, MAR = 0),
-               
-               #Information Ratio
-               InformationRatio(Returns, Returns$BuyandHold.ret),
+
+               #Calmar Ratio
+               CalmarRatio(Returns, scale = 12), #orCalmarRatio(Returns["2014::2017"], scale = 12)
                
                #Ulcer Index
                100*UlcerIndex(Returns),
                
-               #Calmar Ratio
-               CalmarRatio(Returns["2014::2017"], scale = 12)
+               # Sortino
+               SortinoRatio(Returns, MAR = 0),
+               
+               100*c(Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod.Reporting],scale = 12))
+               
                )
 
-colnames(stats) <- c("Buy & Hold",
-                     "Timing",
-                     "Delayed Timing",
-                     "Avg Timing",
-                     "Avg Delayed Timing",
-                     "Avg Combo")
+colnames(stats) <- colnames(Returns)
 
 rownames(stats) <- c("Return",
                      "Volatility",
                      "Sharpe", #what %?
                      "MaxDD",
-                     "Inflation CAGR",
-                     "Sortino Ratio",
-                     "Information Ratio",
+                     "Calmar Ratio",
                      "Ulcer Index",
-                     "Calmar Ratio")
+                     "Sortino Ratio",
+                     "Inflation CAGR")
 
 round(stats,2)
 #write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
+```
+
+####Delaying Entry
+
+```{r, message=FALSE, warning=FALSE}
+Returns <- cbind.xts(AllAssets.xts$BuyandHold.ret,
+                     AllAssets.xts$Timing.ret,
+                     AllAssets.xts$DelayedTiming.ret,
+                     AllAssets.xts$Avg.Timing.ret,
+                     AllAssets.xts$Avg.DelayedTiming.ret
+                     )[SubsetPeriod.Reporting]
+
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c("Buy & Hold","Timing","Delayed Timing","Avg Timing","Avg Delayed Timing")
+
+chart.TimeSeries(CumReturns,
+  main = "Figure X - Timing Model Comparison, Log Scale", #note log not working on new charts
+  date.format = "%Y",
+  colorset = c(4,2,3,5,6,7),
+  ylab = "",
+  ylog = TRUE,
+  #ylim = c(100,76000),
+  legend.loc = "topleft",
+  major.ticks = "years",
+  minor.ticks = FALSE,
+  yaxis = TRUE)
+
+stats <- rbind(100*Return.annualized(Returns,scale = 12), 
+               100*StdDev.annualized(Returns,scale = 12), 
+               SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLS.Close),
+               100*maxDrawdown(Returns,invert = FALSE),
+
+               #Calmar Ratio
+               CalmarRatio(Returns, scale = 12), #orCalmarRatio(Returns["2014::2017"], scale = 12)
+               
+               #Ulcer Index
+               100*UlcerIndex(Returns),
+               
+               # Sortino
+               SortinoRatio(Returns, MAR = 0),
+               
+               100*c(Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod.Reporting],scale = 12))
+               
+               )
+
+colnames(stats) <- colnames(CumReturns)
+
+rownames(stats) <- c("Return",
+                     "Volatility",
+                     "Sharpe", #what %?
+                     "MaxDD",
+                     "Calmar Ratio",
+                     "Ulcer Index",
+                     "Sortino Ratio",
+                     "Inflation CAGR")
+
+round(stats,2)
+#write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
+```
+
+####Diversification of Timing Signal
+
+```{r, message=FALSE, warning=FALSE}
+Returns <- cbind.xts(AllAssets.xts$BuyandHold.ret,
+                     AllAssets.xts$Timing.2m.ret,
+                     AllAssets.xts$Timing.5m.ret,
+                     AllAssets.xts$Timing.ret,
+                     AllAssets.xts$Avg.Timing.ret)[SubsetPeriod.Reporting]
+
+CumReturns <- 100*cumprod(1+Returns[-1,])
+colnames(CumReturns) <- c("Buy & Hold","2m Timing","5m Timing","10m Timing","Avg Timing")
+
+chart.TimeSeries(CumReturns,
+  main = "Figure X - Timing Model Comparison, Log Scale", #note log not working on new charts
+  date.format = "%Y",
+  colorset = c(4,2,3,5,6,7),
+  ylab = "",
+  ylog = TRUE,
+  #ylim = c(100,76000),
+  legend.loc = "topleft",
+  major.ticks = "years",
+  minor.ticks = FALSE,
+  yaxis = TRUE)
+
+stats <- rbind(100*Return.annualized(Returns,scale = 12), 
+               100*StdDev.annualized(Returns,scale = 12), 
+               SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLS.Close),
+               100*maxDrawdown(Returns,invert = FALSE),
+
+               #Calmar Ratio
+               CalmarRatio(Returns, scale = 12), #orCalmarRatio(Returns["2014::2017"], scale = 12)
+               
+               #Ulcer Index
+               100*UlcerIndex(Returns),
+               
+               # Sortino
+               SortinoRatio(Returns, MAR = 0),
+               
+               100*c(Return.annualized(Return.calculate(Cl(CPI))[SubsetPeriod.Reporting],scale = 12))
+               
+               )
+
+colnames(stats) <- colnames(CumReturns)
+
+rownames(stats) <- c("Return",
+                     "Volatility",
+                     "Sharpe", #what %?
+                     "MaxDD",
+                     "Calmar Ratio",
+                     "Ulcer Index",
+                     "Sortino Ratio",
+                     "Inflation CAGR")
+
+round(stats,2)
+#write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
+```
+
+
+Correlation chart
+```{r}
+#load closing pricings
+CorrelationData <- do.call(cbind,list(Cl(SP500),Cl(EAFE),Cl(US10YR),Cl(GSCI),Cl(NAREIT)))
+CorrelationData <- CorrelationData[SubsetPeriod.Reporting]
+
+#Convert from prices to log prices
+CorrelationData.ret <- Return.calculate(CorrelationData)[-1,]
+
+BITCOIN.ret <- log(Cl(BITCOIN))
+
+BITCOIN.ret <- BITCOIN.ret["2010-12-31::2016-12-31"]
+
+chart.RollingCorrelation(CorrelationData.ret, CorrelationData.ret$SP500, width = 24, legend.loc = "bottomleft")
 ```
 

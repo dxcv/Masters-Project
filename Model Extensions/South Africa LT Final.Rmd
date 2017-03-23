@@ -64,7 +64,6 @@ chart.TimeSeries(AllAssets.cumret[SubsetPeriod.Reporting],
 #how do i change scale format!
 ```
 
-
 ####Analysing asset class returns, max drawdowns and other performance statistics
 
 Using the package performance analytics, common performance statistics such as CAGR, volatility and sharpe ratios can be calculated.
@@ -967,33 +966,25 @@ stats <- rbind(Return.annualized(Returns,scale = 12)*100,
                StdDev.annualized(Returns,scale = 12)*100, 
                SharpeRatio.annualized(Returns,Rf = Rf.ret$TBILLYIELDS.Close),
                maxDrawdown(Returns,scale = 12,invert = FALSE)*100,
-               
-               # Sortino
-               SortinoRatio(Returns, MAR = 0),
-               
-               #Information Ratio
-               InformationRatio(Returns, Returns$"Buy and Hold"),
-               
-               #Ulcer Index
-               100*UlcerIndex(Returns),
-               
-               #Calmar Ratio
-               CalmarRatio(Returns["2014::2017"], scale = 12)
-               
+               CalmarRatio(Returns, scale = 12), #all period not just last three years
+               100*UlcerIndex(Returns),         #Ulcer Index          
+               SortinoRatio(Returns, MAR = 0)
                )
                
 colnames(stats) <- c("Buy and Hold","Timing","Timing Delayed","Average Timing","Average Timing Delayed","Avg Combo")
+
 rownames(stats) <- c("Return",
                      "Volatility",
-                     "Sharpe",
+                     "Sharpe", #what %?
                      "MaxDD",
+                     "Calmar Ratio",
+                     "Ulcer Index",
+                     "Sortino Ratio")
+
                      # "% Positive Months",
                      # "% Months invested in the Asset",
                      # "% Positive Months when invested",
-                     "Sortino Ratio",
-                     "Information Ratio",
-                     "Ulcer Index",
-                     "Calmar Ratio")
+
 
 round(stats,2)
 write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
@@ -1083,7 +1074,7 @@ rownames(stats) <- c("Return",
                      "Calmar Ratio")
 
 round(stats,2)
-#write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
+write.table(round(stats,4), "clipboard", sep="\t", col.names=NA)
 ```
 
 
