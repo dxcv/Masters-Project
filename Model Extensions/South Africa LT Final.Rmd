@@ -164,7 +164,8 @@ AllAssets <- AllAssets[SubsetPeriod.Calculations]
 #create dataframe - tidyverse not compatible with xts?
 AllAssets.df <- data.frame(date=index(AllAssets), coredata(AllAssets)) #, row.names = index(AllAssets))
 
-bandwidth <- 0.02
+BuyBand <- 1.025
+SellBand <- 1.00
 #mutate new columns
 AllAssets.df  <- mutate(AllAssets.df,
   "RF.ret" =  c(0,lag((TBILLYIELDS.Close/100)/12)[-1]), 
@@ -189,7 +190,7 @@ AllAssets.df  <- mutate(AllAssets.df,
   "JALSH.2m.timingret.delayed" = ifelse(JALSH.2m.signal.delayed == 1,JALSH.ret,RF.ret),
   "JALSH.5m.timingret.delayed" = ifelse(JALSH.5m.signal.delayed == 1,JALSH.ret,RF.ret),
   "JALSH.10m.timingret.delayed" = ifelse(JALSH.10m.signal.delayed == 1,JALSH.ret,RF.ret),
-  
+
   "JALSH.avg.timingret" = (JALSH.2m.timingret + JALSH.5m.timingret + JALSH.10m.timingret)/3,
   "JALSH.avg.signal" = (JALSH.2m.signal + JALSH.5m.signal + JALSH.10m.signal)/3,
   "JALSH.avg.timingret.delayed" = (JALSH.2m.timingret.delayed + JALSH.5m.timingret.delayed + JALSH.10m.timingret.delayed)/3,  
@@ -209,7 +210,7 @@ AllAssets.df  <- mutate(AllAssets.df,
   "MSCIWORLD.2m.signal.delayed" =  lag(ifelse(MSCIWORLD.Close>=MSCIWORLD.2m.SMA,ifelse(MSCIWORLD.2m.signal==1,1,0),0)),
   "MSCIWORLD.5m.signal.delayed" =  lag(ifelse(MSCIWORLD.Close>=MSCIWORLD.5m.SMA,ifelse(MSCIWORLD.5m.signal==1,1,0),0)),  
   "MSCIWORLD.10m.signal.delayed" =  lag(ifelse(MSCIWORLD.Close>=MSCIWORLD.10m.SMA,ifelse(MSCIWORLD.10m.signal==1,1,0),0)),
-  
+
   "MSCIWORLD.2m.timingret" = ifelse(MSCIWORLD.2m.signal == 1,MSCIWORLD.ret,RF.ret),
   "MSCIWORLD.5m.timingret" = ifelse(MSCIWORLD.5m.signal == 1,MSCIWORLD.ret,RF.ret),
   "MSCIWORLD.10m.timingret" = ifelse(MSCIWORLD.10m.signal == 1,MSCIWORLD.ret,RF.ret),
@@ -281,6 +282,47 @@ AllAssets.df  <- mutate(AllAssets.df,
   "GSCI.avg.combo" = (GSCI.avg.timingret + GSCI.avg.timingret.delayed)/2,
   "GSCI.avg.combo.signal" = (GSCI.avg.signal + GSCI.avg.signal.delayed)/2,
 
+
+  "JALSH.2m.signal.band" =  ifelse(row_number()<=2,0,
+                                    lag(ifelse(JALSH.Close>=(BuyBand*JALSH.2m.SMA),1,
+                                        ifelse(JALSH.Close<(SellBand*JALSH.2m.SMA),0,2)))),  
+  "JALSH.5m.signal.band" =  ifelse(row_number()<=5,0,
+                                    lag(ifelse(JALSH.Close>=(BuyBand*JALSH.5m.SMA),1,
+                                        ifelse(JALSH.Close<(SellBand*JALSH.5m.SMA),0,2)))),  
+  "JALSH.10m.signal.band" =  ifelse(row_number()<=10,0,
+                                    lag(ifelse(JALSH.Close>=(BuyBand*JALSH.10m.SMA),1,
+                                        ifelse(JALSH.Close<(SellBand*JALSH.10m.SMA),0,2)))),
+  
+  "MSCIWORLD.2m.signal.band" =  ifelse(row_number()<=2,0,
+                                    lag(ifelse(MSCIWORLD.Close>=(BuyBand*MSCIWORLD.2m.SMA),1,
+                                        ifelse(MSCIWORLD.Close<(SellBand*MSCIWORLD.2m.SMA),0,2)))),  
+  "MSCIWORLD.5m.signal.band" =  ifelse(row_number()<=5,0,
+                                    lag(ifelse(MSCIWORLD.Close>=(BuyBand*MSCIWORLD.5m.SMA),1,
+                                        ifelse(MSCIWORLD.Close<(SellBand*MSCIWORLD.5m.SMA),0,2)))),  
+  "MSCIWORLD.10m.signal.band" =  ifelse(row_number()<=10,0,
+                                    lag(ifelse(MSCIWORLD.Close>=(BuyBand*MSCIWORLD.10m.SMA),1,
+                                        ifelse(MSCIWORLD.Close<(SellBand*MSCIWORLD.10m.SMA),0,2)))),      
+  
+  "SA10YR.2m.signal.band" =  ifelse(row_number()<=2,0,
+                                    lag(ifelse(SA10YR.Close>=(BuyBand*SA10YR.2m.SMA),1,
+                                        ifelse(SA10YR.Close<(SellBand*SA10YR.2m.SMA),0,2)))),  
+  "SA10YR.5m.signal.band" =  ifelse(row_number()<=5,0,
+                                    lag(ifelse(SA10YR.Close>=(BuyBand*SA10YR.5m.SMA),1,
+                                        ifelse(SA10YR.Close<(SellBand*SA10YR.5m.SMA),0,2)))),  
+  "SA10YR.10m.signal.band" =  ifelse(row_number()<=10,0,
+                                    lag(ifelse(SA10YR.Close>=(BuyBand*SA10YR.10m.SMA),1,
+                                        ifelse(SA10YR.Close<(SellBand*SA10YR.10m.SMA),0,2)))),
+
+  "GSCI.2m.signal.band" =  ifelse(row_number()<=2,0,
+                                    lag(ifelse(GSCI.Close>=(BuyBand*GSCI.2m.SMA),1,
+                                        ifelse(GSCI.Close<(SellBand*GSCI.2m.SMA),0,2)))),  
+  "GSCI.5m.signal.band" =  ifelse(row_number()<=5,0,
+                                    lag(ifelse(GSCI.Close>=(BuyBand*GSCI.5m.SMA),1,
+                                        ifelse(GSCI.Close<(SellBand*GSCI.5m.SMA),0,2)))),  
+  "GSCI.10m.signal.band" =  ifelse(row_number()<=10,0,
+                                    lag(ifelse(GSCI.Close>=(BuyBand*GSCI.10m.SMA),1,
+                                        ifelse(GSCI.Close<(SellBand*GSCI.10m.SMA),0,2)))),  
+
   "BuyandHold.ret" = (JALSH.ret + MSCIWORLD.ret + SA10YR.ret + GSCI.ret)/4,
   
   "Timing.ret" = (JALSH.10m.timingret + MSCIWORLD.10m.timingret + SA10YR.10m.timingret + GSCI.10m.timingret)/4,
@@ -304,6 +346,87 @@ AllAssets.df  <- mutate(AllAssets.df,
   
   )
 
+# update signal for band strategy
+for(i in 1:length(AllAssets.df$JALSH.10m.signal.band)){
+  if(AllAssets.df$JALSH.2m.signal.band[i] == 2){AllAssets.df$JALSH.2m.signal.band[i] = AllAssets.df$JALSH.2m.signal.band[i-1]}
+  if(AllAssets.df$JALSH.5m.signal.band[i] == 2){AllAssets.df$JALSH.5m.signal.band[i] = AllAssets.df$JALSH.5m.signal.band[i-1]}
+  if(AllAssets.df$JALSH.10m.signal.band[i] == 2){AllAssets.df$JALSH.10m.signal.band[i] = AllAssets.df$JALSH.10m.signal.band[i-1]}
+  
+  if(AllAssets.df$MSCIWORLD.2m.signal.band[i] == 2){AllAssets.df$MSCIWORLD.2m.signal.band[i] = AllAssets.df$MSCIWORLD.2m.signal.band[i-1]}
+  if(AllAssets.df$MSCIWORLD.5m.signal.band[i] == 2){AllAssets.df$MSCIWORLD.5m.signal.band[i] = AllAssets.df$MSCIWORLD.5m.signal.band[i-1]}
+  if(AllAssets.df$MSCIWORLD.10m.signal.band[i] == 2){AllAssets.df$MSCIWORLD.10m.signal.band[i] = AllAssets.df$MSCIWORLD.10m.signal.band[i-1]}
+  
+  if(AllAssets.df$SA10YR.2m.signal.band[i] == 2){AllAssets.df$SA10YR.2m.signal.band[i] = AllAssets.df$SA10YR.2m.signal.band[i-1]}
+  if(AllAssets.df$SA10YR.5m.signal.band[i] == 2){AllAssets.df$SA10YR.5m.signal.band[i] = AllAssets.df$SA10YR.5m.signal.band[i-1]}
+  if(AllAssets.df$SA10YR.10m.signal.band[i] == 2){AllAssets.df$SA10YR.10m.signal.band[i] = AllAssets.df$SA10YR.10m.signal.band[i-1]}  
+  
+  if(AllAssets.df$GSCI.2m.signal.band[i] == 2){AllAssets.df$GSCI.2m.signal.band[i] = AllAssets.df$GSCI.2m.signal.band[i-1]}
+  if(AllAssets.df$GSCI.5m.signal.band[i] == 2){AllAssets.df$GSCI.5m.signal.band[i] = AllAssets.df$GSCI.5m.signal.band[i-1]}
+  if(AllAssets.df$GSCI.10m.signal.band[i] == 2){AllAssets.df$GSCI.10m.signal.band[i] = AllAssets.df$GSCI.10m.signal.band[i-1]}
+
+}
+
+#calculat returns for band strategy
+
+AllAssets.df  <- mutate(AllAssets.df,
+
+  "JALSH.2m.timingret.band" = ifelse(JALSH.2m.signal.band == 1,JALSH.ret,RF.ret),
+  "JALSH.5m.timingret.band" = ifelse(JALSH.5m.signal.band == 1,JALSH.ret,RF.ret),
+  "JALSH.10m.timingret.band" = ifelse(JALSH.10m.signal.band == 1,JALSH.ret,RF.ret),
+  
+  "JALSH.avg.timingret.band" = (JALSH.2m.timingret.band + JALSH.5m.timingret.band + JALSH.10m.timingret.band)/3,  
+  "JALSH.avg.signal.band" = (JALSH.2m.signal.band + JALSH.5m.signal.band + JALSH.10m.signal.band)/3, 
+
+  "JALSH.avg.combo.band" = (JALSH.avg.timingret + JALSH.avg.timingret.delayed  + JALSH.avg.timingret.band)/3,
+  "JALSH.avg.combo.band.signal" = (JALSH.avg.signal + JALSH.avg.signal.delayed + JALSH.avg.signal.band)/3,
+
+  "MSCIWORLD.2m.timingret.band" = ifelse(MSCIWORLD.2m.signal.band == 1,MSCIWORLD.ret,RF.ret),
+  "MSCIWORLD.5m.timingret.band" = ifelse(MSCIWORLD.5m.signal.band == 1,MSCIWORLD.ret,RF.ret),
+  "MSCIWORLD.10m.timingret.band" = ifelse(MSCIWORLD.10m.signal.band == 1,MSCIWORLD.ret,RF.ret),
+  
+  "MSCIWORLD.avg.timingret.band" = (MSCIWORLD.2m.timingret.band + MSCIWORLD.5m.timingret.band + MSCIWORLD.10m.timingret.band)/3,  
+  "MSCIWORLD.avg.signal.band" = (MSCIWORLD.2m.signal.band + MSCIWORLD.5m.signal.band + MSCIWORLD.10m.signal.band)/3, 
+
+  "MSCIWORLD.avg.combo.band" = (MSCIWORLD.avg.timingret + MSCIWORLD.avg.timingret.delayed  + MSCIWORLD.avg.timingret.band)/3,
+  "MSCIWORLD.avg.combo.band.signal" = (MSCIWORLD.avg.signal + MSCIWORLD.avg.signal.delayed + MSCIWORLD.avg.signal.band)/3,
+  
+  "SA10YR.2m.timingret.band" = ifelse(SA10YR.2m.signal.band == 1,SA10YR.ret,RF.ret),
+  "SA10YR.5m.timingret.band" = ifelse(SA10YR.5m.signal.band == 1,SA10YR.ret,RF.ret),
+  "SA10YR.10m.timingret.band" = ifelse(SA10YR.10m.signal.band == 1,SA10YR.ret,RF.ret),
+  
+  "SA10YR.avg.timingret.band" = (SA10YR.2m.timingret.band + SA10YR.5m.timingret.band + SA10YR.10m.timingret.band)/3,  
+  "SA10YR.avg.signal.band" = (SA10YR.2m.signal.band + SA10YR.5m.signal.band + SA10YR.10m.signal.band)/3, 
+
+  "SA10YR.avg.combo.band" = (SA10YR.avg.timingret + SA10YR.avg.timingret.delayed  + SA10YR.avg.timingret.band)/3,
+  "SA10YR.avg.combo.band.signal" = (SA10YR.avg.signal + SA10YR.avg.signal.delayed + SA10YR.avg.signal.band)/3,
+  
+  "GSCI.2m.timingret.band" = ifelse(GSCI.2m.signal.band == 1,GSCI.ret,RF.ret),
+  "GSCI.5m.timingret.band" = ifelse(GSCI.5m.signal.band == 1,GSCI.ret,RF.ret),
+  "GSCI.10m.timingret.band" = ifelse(GSCI.10m.signal.band == 1,GSCI.ret,RF.ret),
+  
+  "GSCI.avg.timingret.band" = (GSCI.2m.timingret.band + GSCI.5m.timingret.band + GSCI.10m.timingret.band)/3,  
+  "GSCI.avg.signal.band" = (GSCI.2m.signal.band + GSCI.5m.signal.band + GSCI.10m.signal.band)/3, 
+
+  "GSCI.avg.combo.band" = (GSCI.avg.timingret + GSCI.avg.timingret.delayed  + GSCI.avg.timingret.band)/3,
+  "GSCI.avg.combo.band.signal" = (GSCI.avg.signal + GSCI.avg.signal.delayed + GSCI.avg.signal.band)/3,
+
+  "BandTiming.ret" = (JALSH.10m.timingret.band + MSCIWORLD.10m.timingret.band
+                         + SA10YR.10m.timingret.band + GSCI.10m.timingret.band)/4,
+  "BandTiming.signal" = (JALSH.10m.signal.band + MSCIWORLD.10m.signal.band
+                            + SA10YR.10m.signal.band + GSCI.10m.signal.band)/4,
+
+  "Avg.BandTiming.ret" = (JALSH.avg.timingret.band + MSCIWORLD.avg.timingret.band +
+                            SA10YR.avg.timingret.band + GSCI.avg.timingret.band)/4,
+  "Avg.BandTiming.signal" = (JALSH.avg.signal.band + MSCIWORLD.avg.signal.band +
+                            SA10YR.avg.signal.band + GSCI.avg.signal.band)/4,
+
+  "Avg.Combo.Band.ret" = (JALSH.avg.combo.band + MSCIWORLD.avg.combo.band +
+                            SA10YR.avg.combo.band + GSCI.avg.combo.band)/4,
+  "Avg.Combo.Band.signal" = (JALSH.avg.combo.band.signal + MSCIWORLD.avg.combo.band.signal +
+                            SA10YR.avg.combo.band.signal + GSCI.avg.combo.band.signal)/4
+
+  )
+
 rownames(AllAssets.df) <- index(AllAssets)
 
 #Create xts of calculations to analyse performance
@@ -322,7 +445,7 @@ Rf.ret <- Rf.ret[SubsetPeriod.Reporting]
 
 FormatMultiplier <- 100
 
-Strategies <- c("B&H","Timing","Timing Delayed","Multi Timing","Multi Strat")
+Strategies <- c("B&H","Timing","Timing Delayed","Timing Band","Multi Timing","Multi Strat")
 
 PerformanceMeasures <- c("CAGR","Volatility","Skew","Kurtosis","Inflation CAGR","% in the Market","% positive Months","Best Month","Worst Month","Max Drawdown","Max Drawdown / CAGR",paste("Sharpe Ratio (",round(100*Return.annualized(Return.calculate(TBILLS)[SubsetPeriod.Reporting]),2),"%)", sep = ""),"Sortino Ratio","MAR Ratio","Ulcer Index")
 
@@ -334,24 +457,28 @@ PerformanceMeasures <- c("CAGR","Volatility","Skew","Kurtosis","Inflation CAGR",
 Returns <- cbind.xts(AllAssets.xts$JALSH.ret, 
                      AllAssets.xts$JALSH.10m.timingret, 
                      AllAssets.xts$JALSH.10m.timingret.delayed,
+                     AllAssets.xts$JALSH.10m.timingret.band,
                      AllAssets.xts$JALSH.avg.timingret,
-                     AllAssets.xts$JALSH.avg.combo)[SubsetPeriod.Reporting]
+                     AllAssets.xts$JALSH.avg.combo.band)[SubsetPeriod.Reporting]
 
 colnames(Returns) <- Strategies
 
 chart.CumReturns(Returns, wealth.index = TRUE,
   main = "Strategy Returns, 1972-2016, Log Scale",
-  colorset = c(4,2,3,5,6),legend.loc = "topleft", 
+  #colorset = c(4,2,3,5,6),
+  legend.loc = "topleft", 
   date.format = "%Y", ylab = "", ylog = TRUE)
 
 chart.Drawdown(Returns,#[,-1], to exclude B&H
   main = "Strategy Drawdowns, 1972-2016, Log Scale",
-  date.format = "%Y", colorset = c(4,2,3,5,6),
+  date.format = "%Y", 
+  #colorset = c(4,2,3,5,6),
   ylab = "Drawdown", legend.loc = "bottomright", major.ticks = "years",  minor.ticks = FALSE)
 
 TimeInMarket <- c(nrow(AllAssets.xts[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$JALSH.10m.signal[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$JALSH.10m.signal.delayed[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$JALSH.10m.signal.band[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$JALSH.avg.signal[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$JALSH.avg.combo.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
 
@@ -385,26 +512,30 @@ write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
 Returns <- cbind.xts(AllAssets.xts$MSCIWORLD.ret, 
                      AllAssets.xts$MSCIWORLD.10m.timingret, 
                      AllAssets.xts$MSCIWORLD.10m.timingret.delayed,
+                     AllAssets.xts$MSCIWORLD.10m.timingret.band,
                      AllAssets.xts$MSCIWORLD.avg.timingret,
-                     AllAssets.xts$MSCIWORLD.avg.combo)[SubsetPeriod.Reporting]
+                     AllAssets.xts$MSCIWORLD.avg.combo.band)[SubsetPeriod.Reporting]
 
 colnames(Returns) <- Strategies
 
 chart.CumReturns(Returns, wealth.index = TRUE,
   main = "Strategy Returns, 1972-2016, Log Scale",
-  colorset = c(4,2,3,5,6),legend.loc = "topleft", 
+  #colorset = c(4,2,3,5,6),
+  legend.loc = "topleft", 
   date.format = "%Y", ylab = "", ylog = TRUE)
 
 chart.Drawdown(Returns,#[,-1], to exclude B&H
   main = "Strategy Drawdowns, 1972-2016, Log Scale",
-  date.format = "%Y", colorset = c(4,2,3,5,6),
+  date.format = "%Y",
+  #colorset = c(4,2,3,5,6),
   ylab = "Drawdown", legend.loc = "bottomright", major.ticks = "years",  minor.ticks = FALSE)
 
 TimeInMarket <- c(nrow(AllAssets.xts[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$MSCIWORLD.10m.signal[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$MSCIWORLD.10m.signal.delayed[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$MSCIWORLD.10m.signal.band[SubsetPeriod.Reporting]),                  
                   sum(AllAssets.xts$MSCIWORLD.avg.signal[SubsetPeriod.Reporting]),
-                  sum(AllAssets.xts$MSCIWORLD.avg.combo.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
+                  sum(AllAssets.xts$MSCIWORLD.avg.combo.band.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
 
 FullStats <- rbind(Return.annualized(Returns,scale = 12)*FormatMultiplier, 
                    StdDev.annualized(Returns,scale = 12)*FormatMultiplier, 
@@ -436,26 +567,30 @@ write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
 Returns <- cbind.xts(AllAssets.xts$SA10YR.ret, 
                      AllAssets.xts$SA10YR.10m.timingret, 
                      AllAssets.xts$SA10YR.10m.timingret.delayed,
+                     AllAssets.xts$SA10YR.10m.timingret.band,
                      AllAssets.xts$SA10YR.avg.timingret,
-                     AllAssets.xts$SA10YR.avg.combo)[SubsetPeriod.Reporting]
+                     AllAssets.xts$SA10YR.avg.combo.band)[SubsetPeriod.Reporting]
 
 colnames(Returns) <- Strategies
 
 chart.CumReturns(Returns, wealth.index = TRUE,
   main = "Strategy Returns, 1972-2016, Log Scale",
-  colorset = c(4,2,3,5,6),legend.loc = "topleft", 
+  #colorset = c(4,2,3,5,6),
+  legend.loc = "topleft", 
   date.format = "%Y", ylab = "", ylog = TRUE)
 
 chart.Drawdown(Returns,#[,-1], to exclude B&H
   main = "Strategy Drawdowns, 1972-2016, Log Scale",
-  date.format = "%Y", colorset = c(4,2,3,5,6),
+  date.format = "%Y", 
+  #colorset = c(4,2,3,5,6),
   ylab = "Drawdown", legend.loc = "bottomright", major.ticks = "years",  minor.ticks = FALSE)
 
 TimeInMarket <- c(nrow(AllAssets.xts[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$SA10YR.10m.signal[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$SA10YR.10m.signal.delayed[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$SA10YR.10m.signal.bandd[SubsetPeriod.Reporting]),                  
                   sum(AllAssets.xts$SA10YR.avg.signal[SubsetPeriod.Reporting]),
-                  sum(AllAssets.xts$SA10YR.avg.combo.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
+                  sum(AllAssets.xts$SA10YR.avg.combo.band.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
 
 FullStats <- rbind(Return.annualized(Returns,scale = 12)*FormatMultiplier, 
                    StdDev.annualized(Returns,scale = 12)*FormatMultiplier, 
@@ -487,26 +622,30 @@ write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
 Returns <- cbind.xts(AllAssets.xts$GSCI.ret, 
                      AllAssets.xts$GSCI.10m.timingret, 
                      AllAssets.xts$GSCI.10m.timingret.delayed,
+                     AllAssets.xts$GSCI.10m.timingret.band,
                      AllAssets.xts$GSCI.avg.timingret,
-                     AllAssets.xts$GSCI.avg.combo)[SubsetPeriod.Reporting]
+                     AllAssets.xts$GSCI.avg.combo.band)[SubsetPeriod.Reporting]
 
 colnames(Returns) <- Strategies
 
 chart.CumReturns(Returns, wealth.index = TRUE,
   main = "Strategy Returns, 1972-2016, Log Scale",
-  colorset = c(4,2,3,5,6),legend.loc = "topleft", 
+  #colorset = c(4,2,3,5,6),
+  legend.loc = "topleft", 
   date.format = "%Y", ylab = "", ylog = TRUE)
 
 chart.Drawdown(Returns,#[,-1], to exclude B&H
   main = "Strategy Drawdowns, 1972-2016, Log Scale",
-  date.format = "%Y", colorset = c(4,2,3,5,6),
+  date.format = "%Y", 
+  #colorset = c(4,2,3,5,6),
   ylab = "Drawdown", legend.loc = "bottomright", major.ticks = "years",  minor.ticks = FALSE)
 
 TimeInMarket <- c(nrow(AllAssets.xts[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$GSCI.10m.signal[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$GSCI.10m.signal.delayed[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$GSCI.10m.signal.band[SubsetPeriod.Reporting]),                  
                   sum(AllAssets.xts$GSCI.avg.signal[SubsetPeriod.Reporting]),
-                  sum(AllAssets.xts$GSCI.avg.combo.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
+                  sum(AllAssets.xts$GSCI.avg.combo.band.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
 
 FullStats <- rbind(Return.annualized(Returns,scale = 12)*FormatMultiplier, 
                    StdDev.annualized(Returns,scale = 12)*FormatMultiplier, 
@@ -537,26 +676,30 @@ write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
 Returns <- cbind.xts(AllAssets.xts$BuyandHold.ret,
                      AllAssets.xts$Timing.ret,
                      AllAssets.xts$DelayedTiming.ret,
+                     AllAssets.xts$BandTiming.ret,
                      AllAssets.xts$Avg.Timing.ret,
-                     AllAssets.xts$Avg.Combo.ret)[SubsetPeriod.Reporting]
+                     AllAssets.xts$Avg.Combo.Band.ret)[SubsetPeriod.Reporting]
 
 colnames(Returns) <- Strategies
 
 chart.CumReturns(Returns, wealth.index = TRUE,
   main = "Strategy Returns, 1972-2016, Log Scale",
-  colorset = c(4,2,3,5,6),legend.loc = "topleft", 
+  #colorset = c(4,2,3,5,6),
+  legend.loc = "topleft", 
   date.format = "%Y", ylab = "", ylog = TRUE)
 
 chart.Drawdown(Returns,#[,-1], to exclude B&H
   main = "Strategy Drawdowns, 1972-2016, Log Scale",
-  date.format = "%Y", colorset = c(4,2,3,5,6),
+  date.format = "%Y", 
+  #colorset = c(4,2,3,5,6),
   ylab = "Drawdown", legend.loc = "bottomright", major.ticks = "years",  minor.ticks = FALSE)
 
 TimeInMarket <- c(nrow(AllAssets.xts[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$Timing.signal[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$DelayedTiming.signal[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$BandTiming.signal[SubsetPeriod.Reporting]),                  
                   sum(AllAssets.xts$Avg.Timing.signal[SubsetPeriod.Reporting]),
-                  sum(AllAssets.xts$Avg.Combo.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
+                  sum(AllAssets.xts$Avg.Combo.Band.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
 
 FullStats <- rbind(Return.annualized(Returns,scale = 12)*FormatMultiplier, 
                    StdDev.annualized(Returns,scale = 12)*FormatMultiplier, 
@@ -713,7 +856,9 @@ AllAssets <- AllAssets[SubsetPeriod.Calculations]
 #create dataframe - tidyverse not compatible with xts?
 AllAssets.df <- data.frame(date=index(AllAssets), coredata(AllAssets)) #, row.names = index(AllAssets))
 
-bandwidth <- 0.02
+BuyBand <- 1.025
+SellBand <- 1.00
+
 #mutate new columns
 AllAssets.df  <- mutate(AllAssets.df,
   "RF.ret" =  c(0,lag((TBILLYIELDS.Close/100)/12)[-1]), 
@@ -857,6 +1002,56 @@ AllAssets.df  <- mutate(AllAssets.df,
   "JASPY.avg.combo" = (JASPY.avg.timingret + JASPY.avg.timingret.delayed)/2,
   "JASPY.avg.combo.signal" = (JASPY.avg.signal + JASPY.avg.signal.delayed)/2,
 
+  "JALSH.2m.signal.band" =  ifelse(row_number()<=2,0,
+                                    lag(ifelse(JALSH.Close>=(BuyBand*JALSH.2m.SMA),1,
+                                        ifelse(JALSH.Close<(SellBand*JALSH.2m.SMA),0,2)))),  
+  "JALSH.5m.signal.band" =  ifelse(row_number()<=5,0,
+                                    lag(ifelse(JALSH.Close>=(BuyBand*JALSH.5m.SMA),1,
+                                        ifelse(JALSH.Close<(SellBand*JALSH.5m.SMA),0,2)))),  
+  "JALSH.10m.signal.band" =  ifelse(row_number()<=10,0,
+                                    lag(ifelse(JALSH.Close>=(BuyBand*JALSH.10m.SMA),1,
+                                        ifelse(JALSH.Close<(SellBand*JALSH.10m.SMA),0,2)))),
+  
+  "MSCIWORLD.2m.signal.band" =  ifelse(row_number()<=2,0,
+                                    lag(ifelse(MSCIWORLD.Close>=(BuyBand*MSCIWORLD.2m.SMA),1,
+                                        ifelse(MSCIWORLD.Close<(SellBand*MSCIWORLD.2m.SMA),0,2)))),  
+  "MSCIWORLD.5m.signal.band" =  ifelse(row_number()<=5,0,
+                                    lag(ifelse(MSCIWORLD.Close>=(BuyBand*MSCIWORLD.5m.SMA),1,
+                                        ifelse(MSCIWORLD.Close<(SellBand*MSCIWORLD.5m.SMA),0,2)))),  
+  "MSCIWORLD.10m.signal.band" =  ifelse(row_number()<=10,0,
+                                    lag(ifelse(MSCIWORLD.Close>=(BuyBand*MSCIWORLD.10m.SMA),1,
+                                        ifelse(MSCIWORLD.Close<(SellBand*MSCIWORLD.10m.SMA),0,2)))),      
+  
+  "SA10YR.2m.signal.band" =  ifelse(row_number()<=2,0,
+                                    lag(ifelse(SA10YR.Close>=(BuyBand*SA10YR.2m.SMA),1,
+                                        ifelse(SA10YR.Close<(SellBand*SA10YR.2m.SMA),0,2)))),  
+  "SA10YR.5m.signal.band" =  ifelse(row_number()<=5,0,
+                                    lag(ifelse(SA10YR.Close>=(BuyBand*SA10YR.5m.SMA),1,
+                                        ifelse(SA10YR.Close<(SellBand*SA10YR.5m.SMA),0,2)))),  
+  "SA10YR.10m.signal.band" =  ifelse(row_number()<=10,0,
+                                    lag(ifelse(SA10YR.Close>=(BuyBand*SA10YR.10m.SMA),1,
+                                        ifelse(SA10YR.Close<(SellBand*SA10YR.10m.SMA),0,2)))),
+
+  "GSCI.2m.signal.band" =  ifelse(row_number()<=2,0,
+                                    lag(ifelse(GSCI.Close>=(BuyBand*GSCI.2m.SMA),1,
+                                        ifelse(GSCI.Close<(SellBand*GSCI.2m.SMA),0,2)))),  
+  "GSCI.5m.signal.band" =  ifelse(row_number()<=5,0,
+                                    lag(ifelse(GSCI.Close>=(BuyBand*GSCI.5m.SMA),1,
+                                        ifelse(GSCI.Close<(SellBand*GSCI.5m.SMA),0,2)))),  
+  "GSCI.10m.signal.band" =  ifelse(row_number()<=10,0,
+                                    lag(ifelse(GSCI.Close>=(BuyBand*GSCI.10m.SMA),1,
+                                        ifelse(GSCI.Close<(SellBand*GSCI.10m.SMA),0,2)))),  
+  
+  "JASPY.2m.signal.band" =  ifelse(row_number()<=2,0,
+                                    lag(ifelse(JASPY.Close>=(BuyBand*JASPY.2m.SMA),1,
+                                        ifelse(JASPY.Close<(SellBand*JASPY.2m.SMA),0,2)))),  
+  "JASPY.5m.signal.band" =  ifelse(row_number()<=5,0,
+                                    lag(ifelse(JASPY.Close>=(BuyBand*JASPY.5m.SMA),1,
+                                        ifelse(JASPY.Close<(SellBand*JASPY.5m.SMA),0,2)))),  
+  "JASPY.10m.signal.band" =  ifelse(row_number()<=10,0,
+                                    lag(ifelse(JASPY.Close>=(BuyBand*JASPY.10m.SMA),1,
+                                        ifelse(JASPY.Close<(SellBand*JASPY.10m.SMA),0,2)))), 
+  
   "BuyandHold.ret" = (JALSH.ret + MSCIWORLD.ret + SA10YR.ret + GSCI.ret + JASPY.ret)/5,
   
   "Timing.ret" = (JALSH.10m.timingret + MSCIWORLD.10m.timingret 
@@ -886,6 +1081,104 @@ AllAssets.df  <- mutate(AllAssets.df,
   
   )
 
+
+# update signal for band strategy
+for(i in 1:length(AllAssets.df$JALSH.10m.signal.band)){
+  if(AllAssets.df$JALSH.2m.signal.band[i] == 2){AllAssets.df$JALSH.2m.signal.band[i] = AllAssets.df$JALSH.2m.signal.band[i-1]}
+  if(AllAssets.df$JALSH.5m.signal.band[i] == 2){AllAssets.df$JALSH.5m.signal.band[i] = AllAssets.df$JALSH.5m.signal.band[i-1]}
+  if(AllAssets.df$JALSH.10m.signal.band[i] == 2){AllAssets.df$JALSH.10m.signal.band[i] = AllAssets.df$JALSH.10m.signal.band[i-1]}
+  
+  if(AllAssets.df$MSCIWORLD.2m.signal.band[i] == 2){AllAssets.df$MSCIWORLD.2m.signal.band[i] = AllAssets.df$MSCIWORLD.2m.signal.band[i-1]}
+  if(AllAssets.df$MSCIWORLD.5m.signal.band[i] == 2){AllAssets.df$MSCIWORLD.5m.signal.band[i] = AllAssets.df$MSCIWORLD.5m.signal.band[i-1]}
+  if(AllAssets.df$MSCIWORLD.10m.signal.band[i] == 2){AllAssets.df$MSCIWORLD.10m.signal.band[i] = AllAssets.df$MSCIWORLD.10m.signal.band[i-1]}
+  
+  if(AllAssets.df$SA10YR.2m.signal.band[i] == 2){AllAssets.df$SA10YR.2m.signal.band[i] = AllAssets.df$SA10YR.2m.signal.band[i-1]}
+  if(AllAssets.df$SA10YR.5m.signal.band[i] == 2){AllAssets.df$SA10YR.5m.signal.band[i] = AllAssets.df$SA10YR.5m.signal.band[i-1]}
+  if(AllAssets.df$SA10YR.10m.signal.band[i] == 2){AllAssets.df$SA10YR.10m.signal.band[i] = AllAssets.df$SA10YR.10m.signal.band[i-1]}  
+  
+  if(AllAssets.df$GSCI.2m.signal.band[i] == 2){AllAssets.df$GSCI.2m.signal.band[i] = AllAssets.df$GSCI.2m.signal.band[i-1]}
+  if(AllAssets.df$GSCI.5m.signal.band[i] == 2){AllAssets.df$GSCI.5m.signal.band[i] = AllAssets.df$GSCI.5m.signal.band[i-1]}
+  if(AllAssets.df$GSCI.10m.signal.band[i] == 2){AllAssets.df$GSCI.10m.signal.band[i] = AllAssets.df$GSCI.10m.signal.band[i-1]}
+  
+  if(AllAssets.df$JASPY.2m.signal.band[i] == 2){AllAssets.df$JASPY.2m.signal.band[i] = AllAssets.df$JASPY.2m.signal.band[i-1]}
+  if(AllAssets.df$JASPY.5m.signal.band[i] == 2){AllAssets.df$JASPY.5m.signal.band[i] = AllAssets.df$JASPY.5m.signal.band[i-1]}
+  if(AllAssets.df$JASPY.10m.signal.band[i] == 2){AllAssets.df$JASPY.10m.signal.band[i] = AllAssets.df$JASPY.10m.signal.band[i-1]}
+}
+
+#calculat returns for band strategy
+
+AllAssets.df  <- mutate(AllAssets.df,
+
+  "JALSH.2m.timingret.band" = ifelse(JALSH.2m.signal.band == 1,JALSH.ret,RF.ret),
+  "JALSH.5m.timingret.band" = ifelse(JALSH.5m.signal.band == 1,JALSH.ret,RF.ret),
+  "JALSH.10m.timingret.band" = ifelse(JALSH.10m.signal.band == 1,JALSH.ret,RF.ret),
+  
+  "JALSH.avg.timingret.band" = (JALSH.2m.timingret.band + JALSH.5m.timingret.band + JALSH.10m.timingret.band)/3,  
+  "JALSH.avg.signal.band" = (JALSH.2m.signal.band + JALSH.5m.signal.band + JALSH.10m.signal.band)/3, 
+
+  "JALSH.avg.combo.band" = (JALSH.avg.timingret + JALSH.avg.timingret.delayed  + JALSH.avg.timingret.band)/3,
+  "JALSH.avg.combo.band.signal" = (JALSH.avg.signal + JALSH.avg.signal.delayed + JALSH.avg.signal.band)/3,
+
+  "MSCIWORLD.2m.timingret.band" = ifelse(MSCIWORLD.2m.signal.band == 1,MSCIWORLD.ret,RF.ret),
+  "MSCIWORLD.5m.timingret.band" = ifelse(MSCIWORLD.5m.signal.band == 1,MSCIWORLD.ret,RF.ret),
+  "MSCIWORLD.10m.timingret.band" = ifelse(MSCIWORLD.10m.signal.band == 1,MSCIWORLD.ret,RF.ret),
+  
+  "MSCIWORLD.avg.timingret.band" = (MSCIWORLD.2m.timingret.band + MSCIWORLD.5m.timingret.band + MSCIWORLD.10m.timingret.band)/3,  
+  "MSCIWORLD.avg.signal.band" = (MSCIWORLD.2m.signal.band + MSCIWORLD.5m.signal.band + MSCIWORLD.10m.signal.band)/3, 
+
+  "MSCIWORLD.avg.combo.band" = (MSCIWORLD.avg.timingret + MSCIWORLD.avg.timingret.delayed  + MSCIWORLD.avg.timingret.band)/3,
+  "MSCIWORLD.avg.combo.band.signal" = (MSCIWORLD.avg.signal + MSCIWORLD.avg.signal.delayed + MSCIWORLD.avg.signal.band)/3,
+  
+  "SA10YR.2m.timingret.band" = ifelse(SA10YR.2m.signal.band == 1,SA10YR.ret,RF.ret),
+  "SA10YR.5m.timingret.band" = ifelse(SA10YR.5m.signal.band == 1,SA10YR.ret,RF.ret),
+  "SA10YR.10m.timingret.band" = ifelse(SA10YR.10m.signal.band == 1,SA10YR.ret,RF.ret),
+  
+  "SA10YR.avg.timingret.band" = (SA10YR.2m.timingret.band + SA10YR.5m.timingret.band + SA10YR.10m.timingret.band)/3,  
+  "SA10YR.avg.signal.band" = (SA10YR.2m.signal.band + SA10YR.5m.signal.band + SA10YR.10m.signal.band)/3, 
+
+  "SA10YR.avg.combo.band" = (SA10YR.avg.timingret + SA10YR.avg.timingret.delayed  + SA10YR.avg.timingret.band)/3,
+  "SA10YR.avg.combo.band.signal" = (SA10YR.avg.signal + SA10YR.avg.signal.delayed + SA10YR.avg.signal.band)/3,
+  
+  "GSCI.2m.timingret.band" = ifelse(GSCI.2m.signal.band == 1,GSCI.ret,RF.ret),
+  "GSCI.5m.timingret.band" = ifelse(GSCI.5m.signal.band == 1,GSCI.ret,RF.ret),
+  "GSCI.10m.timingret.band" = ifelse(GSCI.10m.signal.band == 1,GSCI.ret,RF.ret),
+  
+  "GSCI.avg.timingret.band" = (GSCI.2m.timingret.band + GSCI.5m.timingret.band + GSCI.10m.timingret.band)/3,  
+  "GSCI.avg.signal.band" = (GSCI.2m.signal.band + GSCI.5m.signal.band + GSCI.10m.signal.band)/3, 
+
+  "GSCI.avg.combo.band" = (GSCI.avg.timingret + GSCI.avg.timingret.delayed  + GSCI.avg.timingret.band)/3,
+  "GSCI.avg.combo.band.signal" = (GSCI.avg.signal + GSCI.avg.signal.delayed + GSCI.avg.signal.band)/3,
+  
+  "JASPY.2m.timingret.band" = ifelse(JASPY.2m.signal.band == 1,JASPY.ret,RF.ret),
+  "JASPY.5m.timingret.band" = ifelse(JASPY.5m.signal.band == 1,JASPY.ret,RF.ret),
+  "JASPY.10m.timingret.band" = ifelse(JASPY.10m.signal.band == 1,JASPY.ret,RF.ret),
+  
+  "JASPY.avg.timingret.band" = (JASPY.2m.timingret.band + JASPY.5m.timingret.band + JASPY.10m.timingret.band)/3,  
+  "JASPY.avg.signal.band" = (JASPY.2m.signal.band + JASPY.5m.signal.band + JASPY.10m.signal.band)/3, 
+
+  "JASPY.avg.combo.band" = (JASPY.avg.timingret + JASPY.avg.timingret.delayed  + JASPY.avg.timingret.band)/3,
+  "JASPY.avg.combo.band.signal" = (JASPY.avg.signal + JASPY.avg.signal.delayed + JASPY.avg.signal.band)/3,
+
+  "BandTiming.ret" = (JALSH.10m.timingret.band + MSCIWORLD.10m.timingret.band
+                         + SA10YR.10m.timingret.band + GSCI.10m.timingret.band + JASPY.10m.timingret.band)/5,
+  "BandTiming.signal" = (JALSH.10m.signal.band + MSCIWORLD.10m.signal.band
+                            + SA10YR.10m.signal.band + GSCI.10m.signal.band + JASPY.10m.signal.band)/5,
+
+  "Avg.BandTiming.ret" = (JALSH.avg.timingret.band + MSCIWORLD.avg.timingret.band +
+                            SA10YR.avg.timingret.band + GSCI.avg.timingret.band + JASPY.avg.timingret.band)/5,
+  "Avg.BandTiming.signal" = (JALSH.avg.signal.band + MSCIWORLD.avg.signal.band +
+                            SA10YR.avg.signal.band + GSCI.avg.signal.band + JASPY.avg.signal.band)/5,
+
+  "Avg.Combo.Band.ret" = (JALSH.avg.combo.band + MSCIWORLD.avg.combo.band +
+                            SA10YR.avg.combo.band + GSCI.avg.combo.band + JASPY.avg.combo.band)/5,
+  "Avg.Combo.Band.signal" = (JALSH.avg.combo.band.signal + MSCIWORLD.avg.combo.band.signal +
+                            SA10YR.avg.combo.band.signal + GSCI.avg.combo.band.signal + JASPY.avg.combo.band.signal)/5
+
+  #put in SAMAF
+  
+  )
+
+
 rownames(AllAssets.df) <- index(AllAssets)
 
 #Create xts of calculations to analyse performance
@@ -904,7 +1197,7 @@ Rf.ret <- Rf.ret[SubsetPeriod.Reporting]
 
 FormatMultiplier <- 100
 
-Strategies <- c("B&H","Timing","Timing Delayed","Multi Timing","Multi Strat")
+Strategies <- c("B&H","Timing","Timing Delayed","Timing Band","Multi Timing","Multi Strat")
 
 PerformanceMeasures <- c("CAGR","Volatility","Skew","Kurtosis","Inflation CAGR","% in the Market","% positive Months","Best Month","Worst Month","Max Drawdown","Max Drawdown / CAGR",paste("Sharpe Ratio (",round(100*Return.annualized(Return.calculate(TBILLS)[SubsetPeriod.Reporting]),2),"%)", sep = ""),"Sortino Ratio","MAR Ratio","Ulcer Index")
 
@@ -916,26 +1209,30 @@ PerformanceMeasures <- c("CAGR","Volatility","Skew","Kurtosis","Inflation CAGR",
 Returns <- cbind.xts(AllAssets.xts$JASPY.ret, 
                      AllAssets.xts$JASPY.10m.timingret, 
                      AllAssets.xts$JASPY.10m.timingret.delayed,
+                     AllAssets.xts$JASPY.10m.timingret.band,
                      AllAssets.xts$JASPY.avg.timingret,
-                     AllAssets.xts$JASPY.avg.combo)[SubsetPeriod.Reporting]
+                     AllAssets.xts$JASPY.avg.combo.band)[SubsetPeriod.Reporting]
 
 colnames(Returns) <- Strategies
 
 chart.CumReturns(Returns, wealth.index = TRUE,
   main = "Strategy Returns, 1994-2016, Log Scale",
-  colorset = c(4,2,3,5,6),legend.loc = "topleft", 
+  #colorset = c(4,2,3,5,6),
+  legend.loc = "topleft", 
   date.format = "%Y", ylab = "", ylog = TRUE)
 
 chart.Drawdown(Returns,#[,-1], to exclude B&H
   main = "Strategy Drawdowns, 1994-2016, Log Scale",
-  date.format = "%Y", colorset = c(4,2,3,5,6),
+  date.format = "%Y", 
+  #colorset = c(4,2,3,5,6),
   ylab = "Drawdown", legend.loc = "bottomright", major.ticks = "years",  minor.ticks = FALSE)
 
 TimeInMarket <- c(nrow(AllAssets.xts[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$JASPY.10m.signal[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$JASPY.10m.signal.delayed[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$JASPY.10m.signal.band[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$JASPY.avg.signal[SubsetPeriod.Reporting]),
-                  sum(AllAssets.xts$JASPY.avg.combo.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
+                  sum(AllAssets.xts$JASPY.avg.combo.band.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
 
 FullStats <- rbind(Return.annualized(Returns,scale = 12)*FormatMultiplier, 
                    StdDev.annualized(Returns,scale = 12)*FormatMultiplier, 
@@ -968,26 +1265,30 @@ write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
 Returns <- cbind.xts(AllAssets.xts$BuyandHold.ret,
                      AllAssets.xts$Timing.ret,
                      AllAssets.xts$DelayedTiming.ret,
+                     AllAssets.xts$BandTiming.ret,
                      AllAssets.xts$Avg.Timing.ret,
-                     AllAssets.xts$Avg.Combo.ret)[SubsetPeriod.Reporting]
+                     AllAssets.xts$Avg.Combo.Band.ret)[SubsetPeriod.Reporting]
 
 colnames(Returns) <- Strategies
 
 chart.CumReturns(Returns, wealth.index = TRUE,
   main = "Systematic Tactical Asset Allocation Strategy Returns, 1994-2016",
-  colorset = c(4,2,3,5,6),legend.loc = "topleft", 
+  #colorset = c(4,2,3,5,6),
+  legend.loc = "topleft", 
   date.format = "%Y", ylab = "", ylog = TRUE)
 
 chart.Drawdown(Returns,#[,-1], to exclude B&H
   main = "Systematic Tactical Asset Allocation Strategy Drawdowns, 1994-2016",
-  date.format = "%Y", colorset = c(4,2,3,5,6),
+  date.format = "%Y", 
+  #colorset = c(4,2,3,5,6),
   ylab = "Drawdown", legend.loc = "bottomright", major.ticks = "years",  minor.ticks = FALSE)
 
 TimeInMarket <- c(nrow(AllAssets.xts[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$Timing.signal[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$DelayedTiming.signal[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$BandTiming.signal[SubsetPeriod.Reporting]),
                   sum(AllAssets.xts$Avg.Timing.signal[SubsetPeriod.Reporting]),
-                  sum(AllAssets.xts$Avg.Combo.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
+                  sum(AllAssets.xts$Avg.Combo.Band.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
 
 FullStats <- rbind(Return.annualized(Returns,scale = 12)*FormatMultiplier, 
                    StdDev.annualized(Returns,scale = 12)*FormatMultiplier, 
