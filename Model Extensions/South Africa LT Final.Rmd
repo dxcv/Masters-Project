@@ -1172,10 +1172,70 @@ AllAssets.df  <- mutate(AllAssets.df,
   "Avg.Combo.Band.ret" = (JALSH.avg.combo.band + MSCIWORLD.avg.combo.band +
                             SA10YR.avg.combo.band + GSCI.avg.combo.band + JASPY.avg.combo.band)/5,
   "Avg.Combo.Band.signal" = (JALSH.avg.combo.band.signal + MSCIWORLD.avg.combo.band.signal +
-                            SA10YR.avg.combo.band.signal + GSCI.avg.combo.band.signal + JASPY.avg.combo.band.signal)/5
+                            SA10YR.avg.combo.band.signal + GSCI.avg.combo.band.signal + JASPY.avg.combo.band.signal)/5,
 
-  #put in SAMAF
+  #put in WMAF / SAMAF
+  "WMAF.BuyandHold.ret" = (JALSH.ret * 0.225 
+                           +MSCIWORLD.ret * 0.225 
+                           +SA10YR.ret * 0.225 
+                           +GSCI.ret * 0.1 
+                           +JASPY.ret * 0.225),
   
+  "WMAF.Timing.ret" = (JALSH.10m.timingret * 0.225 
+                       +MSCIWORLD.10m.timingret * 0.225 
+                       +SA10YR.10m.timingret * 0.225 
+                       +GSCI.10m.timingret * 0.1 
+                       +JASPY.10m.timingret * 0.225 ),
+  
+  "WMAF.Timing.signal" = (JALSH.10m.signal * 0.225 
+                          +MSCIWORLD.10m.signal * 0.225 
+                          +SA10YR.10m.signal * 0.225 
+                          +GSCI.10m.signal * 0.1 
+                          +JASPY.10m.signal * 0.225 ),
+  
+  "WMAF.Avg.Combo.Band.ret" = (JALSH.avg.combo.band * 0.225 
+                               +MSCIWORLD.avg.combo.band * 0.225 
+                               +SA10YR.avg.combo.band * 0.225 
+                               +GSCI.avg.combo.band * 0.1 
+                               +JASPY.avg.combo.band * 0.225 ),
+  
+  "WMAF.Avg.Combo.Band.signal" = (JALSH.avg.combo.band.signal * 0.225 
+                                  +MSCIWORLD.avg.combo.band.signal * 0.225 
+                                  +SA10YR.avg.combo.band.signal * 0.225 
+                                  +GSCI.avg.combo.band.signal * 0.1 
+                                  +JASPY.avg.combo.band.signal * 0.225 ),
+  
+  "SAMAF.BuyandHold.ret" = (JALSH.ret * 0.25 
+                           +MSCIWORLD.ret * 0.15 
+                           +SA10YR.ret * 0.25 
+                           +GSCI.ret * 0.1 
+                           +JASPY.ret * 0.25),
+  
+  "SAMAF.Timing.ret" = (JALSH.10m.timingret * 0.25 
+                       +MSCIWORLD.10m.timingret * 0.15 
+                       +SA10YR.10m.timingret * 0.25 
+                       +GSCI.10m.timingret * 0.1 
+                       +JASPY.10m.timingret * 0.25 ),
+  
+  "SAMAF.Timing.signal" = (JALSH.10m.signal * 0.25 
+                          +MSCIWORLD.10m.signal * 0.15 
+                          +SA10YR.10m.signal * 0.25 
+                          +GSCI.10m.signal * 0.1 
+                          +JASPY.10m.signal * 0.25 ),
+  
+  "SAMAF.Avg.Combo.Band.ret" = (JALSH.avg.combo.band * 0.25 
+                               +MSCIWORLD.avg.combo.band * 0.15 
+                               +SA10YR.avg.combo.band * 0.25 
+                               +GSCI.avg.combo.band * 0.1 
+                               +JASPY.avg.combo.band * 0.25 ),
+  
+  "SAMAF.Avg.Combo.Band.signal" = (JALSH.avg.combo.band.signal * 0.25 
+                                  +MSCIWORLD.avg.combo.band.signal * 0.15 
+                                  +SA10YR.avg.combo.band.signal * 0.25 
+                                  +GSCI.avg.combo.band.signal * 0.1 
+                                  +JASPY.avg.combo.band.signal * 0.25 )
+  
+
   )
 
 
@@ -1258,9 +1318,9 @@ round(FullStats,2)
 write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
 ```
 
-
-
 #### GTAA
+
+
 ```{r}
 Returns <- cbind.xts(AllAssets.xts$BuyandHold.ret,
                      AllAssets.xts$Timing.ret,
@@ -1315,11 +1375,91 @@ write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
 ```
 
 
+#### GTAA for WMAF / SAMAF
+
+```{r}
+Returns <- cbind.xts(AllAssets.xts$WMAF.BuyandHold.ret,
+                     AllAssets.xts$WMAF.Timing.ret,
+                     AllAssets.xts$WMAF.Avg.Combo.Band.ret,
+                     AllAssets.xts$SAMAF.BuyandHold.ret,
+                     AllAssets.xts$SAMAF.Timing.ret,
+                     AllAssets.xts$SAMAF.Avg.Combo.Band.ret)[SubsetPeriod.Reporting]
+
+colnames(Returns) <- c("WMAF B&H","WMAF Timing","WMAF Multi","SAMAF B&H","SAMAF Timing","SAMAF Multi")
+
+chart.CumReturns(Returns, wealth.index = TRUE,
+  main = "Systematic Tactical Asset Allocation Strategy Returns, 1994-2016",
+  #colorset = c(4,2,3,5,6),
+  legend.loc = "topleft", 
+  date.format = "%Y", ylab = "", ylog = TRUE)
+
+chart.Drawdown(Returns,#[,-1], to exclude B&H
+  main = "Systematic Tactical Asset Allocation Strategy Drawdowns, 1994-2016",
+  date.format = "%Y", 
+  #colorset = c(4,2,3,5,6),
+  ylab = "Drawdown", legend.loc = "bottomright", major.ticks = "years",  minor.ticks = FALSE)
+
+TimeInMarket <- c(nrow(AllAssets.xts[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$WMAF.Timing.signal[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$WMAF.Avg.Combo.Band.signal[SubsetPeriod.Reporting]),
+                  nrow(AllAssets.xts[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$SAMAF.Timing.signal[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$SAMAF.Avg.Combo.Band.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
+
+FullStats <- rbind(Return.annualized(Returns,scale = 12)*FormatMultiplier, 
+                   StdDev.annualized(Returns,scale = 12)*FormatMultiplier, 
+                   skewness(Returns),
+                   kurtosis(Returns),
+                   100*c(Return.annualized(AllAssets.ret$SACPI[SubsetPeriod.Reporting],scale = 12)),
+                   TimeInMarket*FormatMultiplier,
+                   apply(Returns, 2, function(x) length(x[x>0]))/nrow(Returns)*FormatMultiplier,
+                   apply(Returns, 2, function(x) max(x, na.rm = TRUE))*FormatMultiplier,
+                   apply(Returns, 2, function(x) min(x, na.rm = TRUE))*FormatMultiplier,
+                   maxDrawdown(Returns,scale = 12,invert = FALSE)*FormatMultiplier,
+                   -maxDrawdown(Returns,scale = 12,invert = FALSE)/Return.annualized(Returns,scale = 12),
+                   SharpeRatio.annualized(Returns,Rf = AllAssets.ret$TBILLS[SubsetPeriod.Reporting]),
+                   SortinoRatio(Returns, scale = 12), #what MAR?
+                   CalmarRatio(Returns, scale = 12),
+                   UlcerIndex(Returns)*FormatMultiplier)
+
+colnames(FullStats) <- colnames(Returns)
+
+rownames(FullStats) <- PerformanceMeasures
+
+round(FullStats,2)
+write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
+```
 
 
 
 
+```{r}
 
+chart.RollingPerformance(Returns[,1:3],
+                         width = 12,
+                         main = "WMAF Strategy Rolling 12-month Annualised Return",
+                         legend.loc = "topleft")
+
+chart.RollingPerformance(Returns$'WMAF Multi'-Returns$'WMAF B&H', 
+                         width = 12,
+                         main = "WMAF Multi less WMAF B&H Rolling 12-month Annualised Return"
+                         )
+
+chart.RollingPerformance(Returns[,4:6],
+                         width = 12,
+                         main = "SAMAF Strategy Rolling 12-month Annualised Return",
+                         legend.loc = "topleft")
+
+
+chart.RollingPerformance(Returns$'SAMAF Multi'-Returns$'SAMAF B&H', 
+                         width = 12,
+                         main = "SAMAF Multi less SAMAF B&H Rolling 12-month Annualised Return"
+                         )
+
+table.CalendarReturns(Returns$'SAMAF Multi'["1994::2016"])[13]
+
+
+```
 
 
 

@@ -1019,6 +1019,44 @@ round(FullStats,2)
 write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
 ```
 
+```{r}
+chart.RollingPerformance(Returns[,1:2],
+                         width = 12,
+                         main = "Rolling 12-month Annualised Return",
+                         colorset = c(4,2),
+                         legend.loc = "topleft")
+
+chart.RollingPerformance(Returns$'Timing'-Returns$'Buy & Hold', 
+                         width = 12,
+                         colorset = c(3),
+                         main = "Timing less Buy & Hold Rolling 12-month Annualised Return"
+                         )
+
+SP500vsTiming <- cbind.xts(AllAssets.xts$SP500.ret,AllAssets.xts$Timing.ret)[SubsetPeriod.Reporting]
+
+chart.CumReturns(SP500vsTiming, wealth.index = TRUE,
+  main = "Strategy Returns, 1973-2016, Log Scale",
+  colorset = c(4,2,3,5,6),legend.loc = "topleft", 
+  date.format = "%Y", ylab = "", ylog = TRUE)
+
+chart.RollingPerformance(SP500vsTiming,
+                         width = 12,
+                         main = "Rolling 12-month Annualised Return",
+                         colorset = c(4,2),
+                         legend.loc = "topleft")
+
+chart.RollingPerformance(SP500vsTiming$'Timing.ret'-SP500vsTiming$'SP500.ret', 
+                         width = 12,
+                         colorset = c(3),
+                         main = "Timing less Buy & Hold Rolling 12-month Annualised Return"
+                         )
+```
+
+
+
+
+
+
 #### Financialisation of Commodities
 ```{r}
 SubsetPeriod.Reporting <- "2005-12-31::2016-12-31"
