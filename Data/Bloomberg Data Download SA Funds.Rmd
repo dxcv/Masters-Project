@@ -1,0 +1,77 @@
+---
+title: "Bloomberg Data Download"
+output: html_notebook
+---
+
+This file downloads pricing data for the SP500, EAFE, GSCI and NAREIT from Bloomberg.
+
+Download data is converted to monthly data between 31/12/1971 until 31/12/2016 to be able to replicate Faber's original research. At a later stage this can be modified to daily or weekly data if required.
+
+All indices are total return indices provided by Bloomberg.
+
+```{r}
+#clean workspace 
+#rm(list=ls()[! ls() %in% c("object1","object2")]) #remove all but the objects you define e.g. object1 and object2
+```
+
+```{r, message=FALSE}
+#load required packages
+library(Rblpapi)
+library(quantstrat) 
+library(quantmod)
+library(PerformanceAnalytics)
+library(tidyquant)
+```
+
+```{r}
+#connect to bloomberg
+blpConnect()
+```
+
+```{r}
+#Download bloomberg data for indices Faber used
+symbols <- c("ALSTABL Index", "PRUINFA INDEX")
+
+#Set time period
+start.date <- as.Date("1990-12-31")
+end.date <- as.Date("2016-12-31")
+```
+
+```{r}
+#Download data from Bloomberg
+
+#opt <- c("periodicitySelection"="MONTHLY") 
+#is there an option for last day of the month? perhaps include non trading days? currently gives different dates to fred download and requies use of to.monthly function below
+
+BloombergData <- bdh(securities = symbols, 
+            c("PX_LAST"), 
+            start.date= start.date,
+            end.date = end.date
+            #options=opt
+            )
+
+rm(symbols,start.date,end.date)
+```
+
+```{r}
+#convert Bloomberg data into individual xts files 
+
+#to do later see if i can do in Rblpapi download as xts? or create a function/loop?)
+#note using opt <- c("periodicitySelection"="MONTHLY") in the BDH results in different last days of the month to fred
+
+ALSTABL <- xts(BloombergData$`ALSTABL Index`[,-1],BloombergData$`ALSTABL Index`[,1])
+#colnames(SP500) <- c("SP500.Close") - need this if don't use to.monthly?
+ALSTABL <- to.monthly(ALSTABL,indexAt='lastof',drop.time=TRUE)[,4] #convert to monthly
+
+PRUINFA <- xts(BloombergData$`PRUINFA INDEX`[,-1],BloombergData$`PRUINFA INDEX`[,1])
+PRUINFA <- to.monthly(PRUINFA,indexAt='lastof',drop.time=TRUE)[,4] #convert to monthly
+
+rm(BloombergData)
+```
+
+```{r}
+#save as CSV files for use in other files - change to loop at some point
+write.zoo(ALSTABL, file="CSV Files/SA/ALSTABL.csv", sep=",")
+write.zoo(PRUINFA, file="CSV Files/SA/PRUINFA.csv", sep=",")
+```
+

@@ -912,6 +912,9 @@ chart.Drawdown(Returns[,1:2])
 
 charts.PerformanceSummary(Returns[,1:2], main = "GTAA Performance 2010-2016", colorset = c(4,2), wealth.index = TRUE)
 
+charts.RollingPerformance(Returns[,1:2],
+                          width = 12)
+
 ```
 
 #### GTAA
@@ -971,6 +974,9 @@ rownames(FullStats) <- PerformanceMeasures
 
 round(FullStats,2)
 write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
+
+
+
 ```
 
 #### GTAA improvement diversification multi strat
@@ -1185,7 +1191,30 @@ write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
 
 SubsetPeriod.Reporting <- "1972-12-31::2016-12-31"
 
+Result.calc
+
 ```
+
+```{r}
+SubsetPeriod.Reporting <- "1972-12-31::2016-12-31"
+
+CorrelationData <- cbind.xts(AllAssets.xts$SP500.ret, 
+                             AllAssets.xts$EAFE.ret,
+                             AllAssets.xts$NAREIT.ret
+                             #AllAssets.xts$GSCI.ret
+                             #AllAssets.xts$US10YR.ret
+                             )[SubsetPeriod.Reporting]
+
+chart.RollingCorrelation(AllAssets.xts$GSCI.ret[SubsetPeriod.Reporting], 
+                         CorrelationData[SubsetPeriod.Reporting], 
+                         #AllAssets.xts$GSCI.ret[SubsetPeriod.Reporting], 
+                         main = "GSCI Correlations",
+                         width = 36, legend.loc = "bottomleft", 
+                         colorset = c("olivedrab","slateblue","dodgerblue2")
+                         )
+
+```
+
 
 #### Multiple Averaging Periods SP500 Example - not used
 ```{r}
@@ -1333,6 +1362,9 @@ chart.TimeSeries(US10YR[SubsetPeriod.Reporting],
 
 SubsetPeriod.Reporting <- "1972-12-31::1981-12-31"
 
+PerformanceMeasures <- c("CAGR","Volatility","Skew","Kurtosis","Inflation CAGR","% in the Market","% positive Months","Best Month","Worst Month","Max Drawdown","Max Drawdown / CAGR",paste("Sharpe Ratio (",round(100*Return.annualized(Return.calculate(TBILLS)[SubsetPeriod.Reporting]),2),"%)", sep = ""),"Sortino Ratio","MAR Ratio","Ulcer Index")
+
+
 AllAssets <- cbind.xts(Cl(TBILLS),
                        Cl(SP500),
                        Cl(EAFE),
@@ -1360,6 +1392,9 @@ chart.TimeSeries(AllAssets.cumret[SubsetPeriod.Reporting],
  colorset = c("orangered3","olivedrab","slateblue","blue","gold2","dodgerblue2","cornflowerblue")
  #minor.ticks =FALSE
  )
+
+write.table(AllAssets.cumret, "clipboard", sep="\t", col.names=NA) 
+
 
 ###asset class returns
 Returns <- AllAssets.ret[SubsetPeriod.Reporting]

@@ -16,7 +16,7 @@ library(PerformanceAnalytics)
 library(quantstrat)
 
 #Set Symbols
-symbols <- c("TBILLS","JALSH","MSCIWORLD","SA10YR","GSCI","JASPY","SACPI")
+symbols <- c("TBILLS","JALSH","MSCIWORLD","SA10YR","GSCI","JASPY","SACPI","ALSTABL","PRUINFA")
 
 #Import saved pricing data csv files as xts
 getSymbols(symbols,
@@ -27,6 +27,7 @@ getSymbols(symbols,
 #Define subset dates for different period
 SubsetPeriod.Reporting <- "1971-12-31::2016-12-31"
 SubsetPeriod.Calculations <- "1971-01-31::2016-12-31"
+symbols <- c("TBILLS","JALSH","MSCIWORLD","SA10YR","GSCI","JASPY","SACPI")
 ```
 
 #### Calculating asset class returns and charting
@@ -1388,7 +1389,6 @@ write.table(round(Returns,4), "clipboard", sep="\t", col.names=NA)
 
 
 #### GTAA for SAMAF
-
 ```{r}
 Returns <- cbind.xts(AllAssets.xts$SAMAF.BuyandHold.ret,
                      AllAssets.xts$SAMAF.Timing.ret,
@@ -1445,13 +1445,38 @@ write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
 
 
 #### GTAA for SAMAF with funds
+```{r}
+#Define subset dates for different period
+SubsetPeriod.Reporting <- "2003-12-31::2016-12-31"
+SubsetPeriod.Calculations <- "2002-01-31::2016-12-31"
+
+getSymbols(c("ALSTABL","PRUINFA"),
+           src = "csv",
+           dir="../Data/CSV files/SA Long Term/",
+           col.names=c("Close"))
+
+
+AllAssets2 <- cbind.xts(Cl(ALSTABL),
+                       Cl(PRUINFA))                       
+
+AllAssets2 <- AllAssets2[SubsetPeriod.Calculations]
+colnames(AllAssets2) <- c("ALSTABL","PRUINFA")
+
+#calculate returns and cum returns
+AllAssets2.ret <- Return.calculate(AllAssets2)[-1,]
+AllAssets2.cumret <- 100*cumprod(1+ ROC(AllAssets2, type = "discrete")[-1,])
+```
+
+
 
 ```{r}
 Returns <- cbind.xts(AllAssets.xts$SAMAF.BuyandHold.ret,
                      AllAssets.xts$SAMAF.Timing.ret,
-                     AllAssets.xts$SAMAF.Avg.Combo.Band.ret)[SubsetPeriod.Reporting]
+                     AllAssets.xts$SAMAF.Avg.Combo.Band.ret,
+                     AllAssets2.ret$ALSTABL,
+                     AllAssets2.ret$PRUINFA)[SubsetPeriod.Reporting]
 
-colnames(Returns) <- c("B&H","Timing","Multi")
+colnames(Returns) <- c("B&H","Timing","Multi","ALSTABL","PRUINFA")
 
 chart.CumReturns(Returns, wealth.index = TRUE,
   main = "Systematic Tactical Asset Allocation Strategy Returns, 1994-2016",
@@ -1497,6 +1522,78 @@ rownames(FullStats) <- PerformanceMeasures
 round(FullStats,2)
 write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
 ```
+
+
+
+
+
+
+
+
+
+
+with fees
+```{r}
+annualfee <- 0.01
+fees <- ((1 + annualfee)^(1/12))-1
+
+Returns <- cbind.xts(AllAssets.xts$SAMAF.BuyandHold.ret,
+                     AllAssets.xts$SAMAF.Timing.ret-fees,
+                     AllAssets.xts$SAMAF.Avg.Combo.Band.ret-fees,
+                     AllAssets2.ret$ALSTABL,
+                     AllAssets2.ret$PRUINFA)[SubsetPeriod.Reporting]
+
+colnames(Returns) <- c("B&H","Timing","Multi","ALSTABL","PRUINFA")
+
+chart.CumReturns(Returns, wealth.index = TRUE,
+  main = "Systematic Tactical Asset Allocation Strategy Returns, 1994-2016",
+  #colorset = c(4,2,3,5,6),
+  legend.loc = "topleft", 
+  date.format = "%Y", ylab = "", ylog = TRUE)
+
+chart.Drawdown(Returns,#[,-1], to exclude B&H
+  main = "Systematic Tactical Asset Allocation Strategy Drawdowns, 1994-2016",
+  date.format = "%Y", 
+  #colorset = c(4,2,3,5,6),
+  ylab = "Drawdown", legend.loc = "bottomright", major.ticks = "years",  minor.ticks = FALSE)
+
+TimeInMarket <- c(nrow(AllAssets.xts[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$WMAF.Timing.signal[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$WMAF.Avg.Combo.Band.signal[SubsetPeriod.Reporting]),
+                  nrow(AllAssets.xts[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$SAMAF.Timing.signal[SubsetPeriod.Reporting]),
+                  sum(AllAssets.xts$SAMAF.Avg.Combo.Band.signal[SubsetPeriod.Reporting]))/nrow(AllAssets.xts[SubsetPeriod.Reporting])
+
+FullStats <- rbind(Return.annualized(Returns,scale = 12)*FormatMultiplier, 
+                   StdDev.annualized(Returns,scale = 12)*FormatMultiplier, 
+                   skewness(Returns),
+                   kurtosis(Returns),
+                   100*c(Return.annualized(AllAssets.ret$SACPI[SubsetPeriod.Reporting],scale = 12)),
+                   TimeInMarket*FormatMultiplier,
+                   apply(Returns, 2, function(x) length(x[x>0]))/nrow(Returns)*FormatMultiplier,
+                   apply(Returns, 2, function(x) max(x, na.rm = TRUE))*FormatMultiplier,
+                   apply(Returns, 2, function(x) min(x, na.rm = TRUE))*FormatMultiplier,
+                   maxDrawdown(Returns,scale = 12,invert = FALSE)*FormatMultiplier,
+                   -maxDrawdown(Returns,scale = 12,invert = FALSE)/Return.annualized(Returns,scale = 12),
+                   SharpeRatio.annualized(Returns,Rf = AllAssets.ret$TBILLS[SubsetPeriod.Reporting]),
+                   SortinoRatio(Returns, scale = 12), #what MAR?
+                   CalmarRatio(Returns, scale = 12),
+                   UlcerIndex(Returns)*FormatMultiplier)
+
+colnames(FullStats) <- colnames(Returns)
+
+PerformanceMeasures <- c("CAGR","Volatility","Skew","Kurtosis","Inflation CAGR","% in the Market","% positive Months","Best Month","Worst Month","Max Drawdown","Max Drawdown / CAGR",paste("Sharpe Ratio (",round(100*Return.annualized(Return.calculate(TBILLS)[SubsetPeriod.Reporting]),2),"%)", sep = ""),"Sortino Ratio","MAR Ratio","Ulcer Index")
+
+rownames(FullStats) <- PerformanceMeasures
+
+round(FullStats,2)
+write.table(round(FullStats,4), "clipboard", sep="\t", col.names=NA)
+
+write.table(round(Returns,5), "clipboard", sep="\t", col.names=NA)
+```
+
+
+
 
 ```{r}
 
