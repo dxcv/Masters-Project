@@ -1,0 +1,96 @@
+---
+title: "Getting Bloomberg Data"
+output: html_notebook
+---
+
+A demo of pulling pricing data using [Rblpapi](https://github.com/Rblp/Rblpapi)
+
+### Load required packages
+First lets load the required packages
+```{r}
+if (!require("Rblpapi")) {
+  install.packages("Rblpapi")
+  library(TTR)
+}
+if (!require("quantmod")) {
+  install.packages("Rblpapi")
+  library(TTR)
+}
+```
+
+### Connect to Bloomberg
+Then connect to bloomberg
+```{r}
+blpConnect()
+```
+
+### Set the variables
+
+Define the securities... Note always have more than 1!
+```{r}
+securities <- c("TOP40","EXX","ASX200")
+securities.tickers <- c("TOP40 Index","EXX SJ Equity","AS51 Index")
+fields <- c("PX_OPEN","PX_HIGH","PX_LOW","PX_LAST","VOLUME")
+start.date <- as.Date("2010-12-31")
+end.date <- as.Date("2017-12-31")
+```
+
+### Download the data
+```{r}
+Rblpapi.Data <- bdh(securities = securities.tickers, 
+                    fields, 
+                    start.date = start.date, 
+                    end.date = end.date,
+                    include.non.trading.days = FALSE, 
+                    options = NULL, 
+                    overrides = NULL,
+                    verbose = FALSE, 
+                    identity = NULL, 
+                    con = defaultConnection())
+```
+
+###Convert to individual xts objects, rename columns for quanstrat
+```{r}
+for (i in 1:length(securities)) {
+  x <- xts(Rblpapi.Data[[securities.tickers[i]]][,-1],
+           Rblpapi.Data[[securities.tickers[i]]][,1])
+  
+  colnames(x) <- c(paste(securities[i],".Open",sep = ""),
+                 paste(securities[i],".High",sep = ""),
+                 paste(securities[i],".Low",sep = ""),
+                 paste(securities[i],".Close",sep = ""),
+                 paste(securities[i],".Volume",sep = ""))
+  
+  assign(securities[i],x)
+}
+rm(x)
+```
+
+### Creating Trade the Tape Chart
+
+```{r}
+security = "ASX200"
+weeklydata <- to.weekly(get(security))
+
+myChartTheme <- chart_theme()
+myChartTheme$col$dn.col <- "red" #lightpink
+myChartTheme$col$up.col <- "lightgreen" #white
+myChartTheme$macd$macd <- "blue"
+myChartTheme$macd$down.col <- "blue"
+myChartTheme$macd$up.col <- "blue"
+myChartTheme$macd$signal <- "red"
+
+chart_Series(weeklydata,
+             name = paste(security,"Weekly Chart", sep = " "),
+             subset = "2015-05/",
+             type = "candlesticks",
+             theme = myChartTheme,
+             TA = 'add_SMA(10,col = "red");
+                   add_SMA(35, col = "blue");
+                   add_SMA(100, col = "darkgreen");
+                   add_MACD(histogram = TRUE)'
+)
+
+
+```
+
